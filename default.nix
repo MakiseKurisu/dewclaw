@@ -14,6 +14,13 @@ let
   };
 in
 
-pkgs.lib.mapAttrs
-  (_: dev: dev.build.deploy)
-  evaluated.config.openwrt
+pkgs.buildEnv rec {
+  name = "dewclaw-env";
+
+  paths = builtins.attrValues passthru.targets;
+
+  passthru.targets =
+    pkgs.lib.mapAttrs
+      (_: dev: dev.build.deploy)
+      evaluated.config.openwrt;
+}
