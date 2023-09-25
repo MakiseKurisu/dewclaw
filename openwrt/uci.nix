@@ -57,6 +57,17 @@ let
       lib.listToAttrs
       lib.attrNames
     ];
+
+  uciIdentifierCheck = type: attrs:
+    let
+      invalid = lib.filter
+        (n: builtins.match "[a-zA-Z0-9_]+" n == null)
+        (lib.attrNames attrs);
+    in
+      lib.warnIf
+        (invalid != [])
+        ("Invalid UCI ${type} names found: ${toString invalid}")
+        (invalid == []);
 in
 
 {
@@ -101,7 +112,8 @@ in
               };
             })
           ];
-          options = attrsOf (either scalar (listOf scalar));
+          uciAttrsOf = type: elem: addCheck (attrsOf elem) (uciIdentifierCheck type);
+          options = uciAttrsOf "option" (either scalar (listOf scalar));
         in
           submodule {
             freeformType =
@@ -110,7 +122,7 @@ in
               attrsOf # config
                 (attrsOf # type
                   (either
-                    (attrsOf options) # name ...
+                    (uciAttrsOf "section" options) # name ...
                     (listOf options) # [{ ... }]
                   ));
           };
@@ -159,6 +171,9 @@ in
     build.configFile = pkgs.writeText "config" (formatConfig cfg.settings);
 
     deploySteps.uciConfig =
+      # correctness of config identifiers can't be checked on the type level
+      # because submodules are weird sometimes, so we have to do it here.
+      assert uciIdentifierCheck "config" cfg.settings;
       let
         cfgName = baseNameOf config.build.configFile;
         jq = "${pkgs.jq}/bin/jq";
