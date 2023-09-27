@@ -34,6 +34,11 @@ apply() {
         printf "$RED>> %s$NORMAL\n" "$*"
     }
 
+    if [ -e /overlay/upper.dead ]; then
+        log_err "previous failed deployment still needs recovery"
+        exit 1
+    fi
+
     if ! rm -rf /overlay/upper.prev/ \
         || ! cp -al /overlay/upper/ /overlay/upper.prev/ \
         || ! rm -rf /overlay/upper.prev/etc/ \
