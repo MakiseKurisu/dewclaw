@@ -22,6 +22,13 @@ _rollback() {
 }
 
 apply() {
+    CYAN='\e[36m'
+    NORMAL='\e[0m'
+
+    log() {
+        printf "$CYAN>> %s$NORMAL\n" "$*"
+    }
+
     if ! rm -rf /overlay/upper.prev/ \
         || ! cp -al /overlay/upper/ /overlay/upper.prev/ \
         || ! rm -rf /overlay/upper.prev/etc/ \
@@ -43,10 +50,6 @@ apply() {
     # immediately and reboot.
 
     trap 'reboot &' EXIT
-
-    log() {
-        printf "$LOG_FMT\n" "$*"
-    }
 
     if ! (
         set -e

@@ -174,10 +174,7 @@ let
                 # apply the new config and wait for the box to go down via ssh connection
                 # timeout.
                 log 'applying config'
-                ssh '
-                  export LOG_FMT="'"$CYAN"'>> %s'"$NORMAL"'"
-                  /etc/init.d/config_generation apply </dev/null 2>&1 \
-                    | logger -t '"$TAG" &
+                ssh '/etc/init.d/config_generation apply </dev/null 2>&1 | logger -t '"$TAG" &
                 ssh 'logread -l9999 -f' | awk -v FS="$TAG: " '$2 { print $2 }' || true
 
                 log 'waiting for device to return'
