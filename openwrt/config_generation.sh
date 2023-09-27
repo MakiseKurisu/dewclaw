@@ -16,17 +16,22 @@ _rollback() {
     if mv -T /overlay/upper.prev /overlay/upper; then
         rm -rf /overlay/upper.dead
     else
-        echo "rollback failed, check /overlay/upper.dead and recover!" >&2
+        echo "rollback failed, manual recovery needed. check /overlay/upper.dead!" >&2
         exit 1
     fi
 }
 
 apply() {
     CYAN='\e[36m'
+    RED='\e[31m'
     NORMAL='\e[0m'
 
     log() {
         printf "$CYAN>> %s$NORMAL\n" "$*"
+    }
+
+    log_err() {
+        printf "$RED>> %s$NORMAL\n" "$*"
     }
 
     if ! rm -rf /overlay/upper.prev/ \
@@ -34,14 +39,14 @@ apply() {
         || ! rm -rf /overlay/upper.prev/etc/ \
         || ! cp -a /overlay/upper/etc/ /overlay/upper.prev/
     then
-        echo "failed to snapshot old config"
+        log_err "failed to snapshot old config"
         rm -rf /overlay/upper.prev
         exit 1
     fi
 
     if ! /etc/init.d/config_generation enable
     then
-        echo "failed to schedule rollback"
+        log_err "failed to schedule rollback"
         rm -rf /overlay/upper.prev
         exit 1
     fi
@@ -57,8 +62,12 @@ apply() {
         @deploy_steps@
     )
     then
+        log_err 'deployment failed, rolling back and rebooting ...'
         _rollback
+        exit 1
     fi
+
+    log 'rebooting device ...'
 }
 
 commit() {

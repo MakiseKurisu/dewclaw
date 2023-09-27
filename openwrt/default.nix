@@ -100,8 +100,6 @@ let
                       ${s.apply}
                     '')
                     steps}
-
-                  log 'rebooting device ...'
                 '';
                 rollback_timeout = config.deploy.rollbackTimeout;
             } ''
