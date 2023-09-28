@@ -52,6 +52,23 @@ let
               ::: {.warning}
               Values under `20` will very likely cause spurious rollbacks.
               :::
+
+              ::: {.notice}
+              During reload-only deployment this timeout *includes* the time needed to apply
+              configuration, which may be substatial if network activity is necessary (eg when
+              installing packages).
+              :::
+            '';
+          };
+
+          reloadServiceWait = lib.mkOption {
+            type = lib.types.ints.unsigned;
+            default = 10;
+            description = ''
+              How long to wait (in seconds) during reload-only deployment to allow for more
+              graceful service restarts. Small values make reloads faster, but since OpenWRT
+              has no mechanism to figure out *when* all services are done starting this also
+              introduces possible failure points.
             '';
           };
         };
@@ -102,13 +119,16 @@ let
                     steps}
                 '';
                 rollback_timeout = config.deploy.rollbackTimeout;
+                reload_service_wait = config.deploy.reloadServiceWait;
             } ''
               substitute "$src" "$out" \
                 --subst-var deploy_steps \
-                --subst-var rollback_timeout
+                --subst-var rollback_timeout \
+                --subst-var reload_service_wait
               chmod +x "$out"
             '';
-            timeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
+            rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
+            reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;
             sshOpts =
               ''-o ControlPath="$TMP/cm" ''
               + lib.escapeShellArgs
@@ -147,7 +167,7 @@ let
               TAG="apply_config_$$_$RANDOM"
 
               ssh() {
-                command ssh ${sshOpts} device "$@"
+                command ssh -n ${sshOpts} device "$@"
               }
 
               scp() {
@@ -155,6 +175,16 @@ let
               }
 
               main() {
+                RELOAD_ONLY=false
+                TIMEOUT=${toString rebootTimeout}s
+
+                case "$@" in
+                  --reload) RELOAD_ONLY=true
+                            TIMEOUT=${toString reloadTimeout}s
+                            ;;
+                  "") ;;
+                esac
+
                 export TMP="$(umask 0077; mktemp -d)"
 
                 trap '
@@ -172,11 +202,25 @@ let
                 # apply the new config and wait for the box to go down via ssh connection
                 # timeout.
                 log 'applying config'
-                ssh '/etc/init.d/config_generation apply </dev/null 2>&1 | logger -t '"$TAG" &
-                ssh 'logread -l9999 -f' | awk -v FS="$TAG: " '$2 { print $2 }' || true
+                if $RELOAD_ONLY; then
+                  ssh 'logread -l9999 -f' &
+                  ssh '/etc/init.d/config_generation prepare_reload'
+                  ssh '/etc/init.d/config_generation start' &
+                  ssh '/etc/init.d/config_generation apply_reload 2>&1 | logger -t '"$TAG"
+                  ssh -O exit
+                else
+                  ssh 'logread -l9999 -f' &
+                  ssh 'service config_generation apply_reboot 2>&1 | logger -t '"$TAG"
+                  # if the previous command succeeded we're up for a reboot, at which
+                  # point ssh will exit with a 255 status
+                  wait %1 || true
+                fi \
+                  | awk -v FS="$TAG: " '
+                      $2 { print $2 }
+                    '
 
                 log 'waiting for device to return'
-                __DO_WAIT=1 timeout --foreground ${toString timeout}s "$0" || {
+                __DO_WAIT=1 timeout --foreground $TIMEOUT "$0" || {
                   log_err 'configuration change failed, device will roll back and reboot'
                   exit 1
                 }
@@ -191,7 +235,7 @@ let
               }
 
               case "''${__DO_WAIT:-}" in
-                "") main ;;
+                "") main "$@" ;;
                 *) _wait ;;
               esac
             '';

@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-EXTRA_COMMANDS="apply commit"
+EXTRA_COMMANDS="apply_reboot prepare_reload apply_reload commit"
 START=99
 
 _unregister_script() {
@@ -21,7 +21,7 @@ _rollback() {
     fi
 }
 
-apply() {
+_prepare_apply() {
     CYAN='\e[36m'
     RED='\e[31m'
     NORMAL='\e[0m'
@@ -55,24 +55,58 @@ apply() {
         rm -rf /overlay/upper.prev
         exit 1
     fi
+}
+
+_run_steps() {
+    (
+        set -e
+        @deploy_steps@
+    )
+}
+
+apply_reboot() {
+    _prepare_apply
 
     # everything after this point may fail. if it does we'll simply roll back
     # immediately and reboot.
 
     trap 'reboot &' EXIT
 
-    if ! (
-        set -e
-
-        @deploy_steps@
-    )
-    then
+    if ! _run_steps; then
         log_err 'deployment failed, rolling back and rebooting ...'
         _rollback
         exit 1
     fi
 
     log 'rebooting device ...'
+}
+
+prepare_reload() {
+    mkdir /overlay/upper.prev
+    /etc/init.d/config_generation enable
+}
+
+apply_reload() {
+    _prepare_apply
+
+    # everything after this point may fail. if it does we'll simply roll back
+    # immediately and reboot.
+
+    trap 'reboot &' EXIT
+
+    if _run_steps; then
+        trap '' EXIT
+        log 'reloading config ...'
+        reload_config
+        # give service restarts a chance
+        log 'waiting @reload_service_wait@s for services ...'
+        sleep @reload_service_wait@
+        exit 0
+    else
+        log_err 'deployment failed, rolling back and rebooting ...'
+        _rollback
+        exit 1
+    fi
 }
 
 commit() {
