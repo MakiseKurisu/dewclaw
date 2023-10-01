@@ -124,7 +124,10 @@ in
                   (either
                     (uciAttrsOf "section" options) # name ...
                     (listOf options) # [{ ... }]
-                  ));
+                  ))
+              // {
+                description = "UCI config";
+              };
           };
       default = {};
       description = ''

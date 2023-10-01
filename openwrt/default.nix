@@ -5,12 +5,19 @@ let
 
   devType = lib.types.submoduleWith {
     specialArgs.pkgs = pkgs;
+    description = "OpenWRT configuration";
     modules = [({ name, config, ... }: {
       options = {
         deploy = {
           host = lib.mkOption {
             type = lib.types.str;
             default = name;
+            example = "192.168.0.1";
+            description = ''
+              Host to deploy to. Defaults to the attribute name, but this may have unintended
+              side-effects when deploying to the DNS server of the current network. Prefer
+              IP addresses or names of `ssh_config` host blocks for such cases.
+            '';
           };
 
           user = lib.mkOption {
@@ -53,7 +60,7 @@ let
               Values under `20` will very likely cause spurious rollbacks.
               :::
 
-              ::: {.notice}
+              ::: {.note}
               During reload-only deployment this timeout *includes* the time needed to apply
               configuration, which may be substatial if network activity is necessary (eg when
               installing packages).
@@ -81,12 +88,30 @@ let
         deploySteps = lib.mkOption {
           type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
             options = {
-              name = lib.mkOption { type = lib.types.str; default = name; };
-              priority = lib.mkOption { type = lib.types.int; };
+              name = lib.mkOption {
+                type = lib.types.str;
+                default = name;
+                internal = true;
+              };
+              priority = lib.mkOption {
+                type = lib.types.int;
+                internal = true;
+              };
 
-              prepare = lib.mkOption { type = lib.types.lines; default = ""; };
-              copy = lib.mkOption { type = lib.types.lines; default = ""; };
-              apply = lib.mkOption { type = lib.types.lines; };
+              prepare = lib.mkOption {
+                type = lib.types.lines;
+                default = "";
+                internal = true;
+              };
+              copy = lib.mkOption {
+                type = lib.types.lines;
+                default = "";
+                internal = true;
+              };
+              apply = lib.mkOption {
+                type = lib.types.lines;
+                internal = true;
+              };
             };
           }));
           internal = true;
@@ -249,5 +274,9 @@ in
   options.openwrt = lib.mkOption {
     type = lib.types.attrsOf devType;
     default = {};
+    description = ''
+      OpenWRT device configurations. Each attribute will produce an indepdent deployment
+      script that applies the corresponding configuration to the target device.
+    '';
   };
 }
