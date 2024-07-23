@@ -25,7 +25,7 @@ in
         })
       ];
     });
-    default = {};
+    default = { };
     description = ''
       Extra files to *create* in the target `/etc`. It is not currently possible to
       *delete* files from the target.
@@ -35,7 +35,7 @@ in
     '';
   };
 
-  config = lib.mkIf (cfg != {}) {
+  config = lib.mkIf (cfg != { }) {
     deploySteps.etc = {
       priority = 8000;
       apply =

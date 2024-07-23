@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> { config = {}; overlays = []; }
+{ pkgs ? import <nixpkgs> { config = { }; overlays = [ ]; }
 }:
 
 let
@@ -20,22 +20,23 @@ let
           let
             removed = pkgs.lib.removePrefix cwd decl;
           in
-            if removed != decl
-            then {
-              url =
-                "https://git.eno.space/dewclaw.git/tree${removed}"
-                + (if pkgs.lib.hasSuffix ".nix" removed
-                   then ""
-                   else "/default.nix");
-              name = "<dewclaw${removed}>";
-            }
-            else removed;
-        in
-          opt // { declarations = map shorten opt.declarations; };
+          if removed != decl
+          then {
+            url =
+              "https://git.eno.space/dewclaw.git/tree${removed}"
+              + (if pkgs.lib.hasSuffix ".nix" removed
+              then ""
+              else "/default.nix");
+            name = "<dewclaw${removed}>";
+          }
+          else removed;
+      in
+      opt // { declarations = map shorten opt.declarations; };
   };
 in
 
-pkgs.runCommand "dewclaw-book" {
+pkgs.runCommand "dewclaw-book"
+{
   src = ./src;
   buildInputs = [ pkgs.mdbook ];
 } ''

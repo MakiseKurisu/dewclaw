@@ -53,7 +53,7 @@ let
       (lib.concatMap (s: if lib.isAttrs s then lib.attrValues s else s))
       (lib.concatMap lib.attrValues)
       (lib.concatMap lib.toList)
-      (lib.concatMap (v: if v ? _secret then [{ name = v._secret; value = {}; }] else []))
+      (lib.concatMap (v: if v ? _secret then [{ name = v._secret; value = { }; }] else [ ]))
       lib.listToAttrs
       lib.attrNames
     ];
@@ -64,10 +64,10 @@ let
         (n: builtins.match "[a-zA-Z0-9_]+" n == null)
         (lib.attrNames attrs);
     in
-      lib.warnIf
-        (invalid != [])
-        ("Invalid UCI ${type} names found: ${toString invalid}")
-        (invalid == []);
+    lib.warnIf
+      (invalid != [ ])
+      ("Invalid UCI ${type} names found: ${toString invalid}")
+      (invalid == [ ]);
 in
 
 {
@@ -115,21 +115,21 @@ in
           uciAttrsOf = type: elem: addCheck (attrsOf elem) (uciIdentifierCheck type);
           options = uciAttrsOf "option" (either scalar (listOf scalar));
         in
-          submodule {
-            freeformType =
-              # <config>.<name>=type       -> config.type.name ...
-              # <config>.@<anonymous>=type -> config.type = [{ ... }]
-              attrsOf # config
-                (attrsOf # type
-                  (either
-                    (uciAttrsOf "section" options) # name ...
-                    (listOf options) # [{ ... }]
-                  ))
-              // {
-                description = "UCI config";
-              };
-          };
-      default = {};
+        submodule {
+          freeformType =
+            # <config>.<name>=type       -> config.type.name ...
+            # <config>.@<anonymous>=type -> config.type = [{ ... }]
+            attrsOf # config
+              (attrsOf # type
+                (either
+                  (uciAttrsOf "section" options) # name ...
+                  (listOf options) # [{ ... }]
+                ))
+            // {
+              description = "UCI config";
+            };
+        };
+      default = { };
       description = ''
         UCI settings in hierarchical representation. The toplevel key of this
         set denotes a UCI package, the second level the type of section, and the
@@ -155,7 +155,7 @@ in
 
     retain = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       example = [ "ucitrack" ];
       description = ''
         UCI package configuration to retain. Packages listed here will not have preexisting
@@ -182,53 +182,53 @@ in
         jq = "${pkgs.jq}/bin/jq";
         configured = lib.attrNames config.uci.settings ++ config.uci.retain;
       in
-        {
-          priority = 4999;
-          prepare = ''
-            cp --no-preserve=all ${config.build.configFile} "$TMP"
-            (
-              umask 0077
-              C="$TMP"/${cfgName}
-              S="$TMP"/secrets
-              ${cfg.secretsCommand} > "$S"
-              [ "$(${jq} -r type <"$S")" == "object" ] || {
-                log_err "secrets command did not produce an object"
-                exit 1
-              }
-              ${lib.concatMapStrings
-                (secret: let arg = lib.escapeShellArg secret; in ''
-                  has="$(${jq} -r --arg s ${arg} 'has($s)' <"$S")"
-                  $has || {
-                    log_err secret ${arg} not defined
-                    exit 1
-                  }
-                  ${pkgs.replace-secret}/bin/replace-secret \
-                    ${lib.escapeShellArg (secretName secret)} \
-                    <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
-                    "$C"
-                '')
-                (collectSecrets cfg.settings)}
-            )
-          '';
-          copy = ''
-            scp "$TMP"/${cfgName} device:/tmp/
-          '';
-          apply = ''
-            uci import < /tmp/${cfgName}
-            uci commit
+      {
+        priority = 4999;
+        prepare = ''
+          cp --no-preserve=all ${config.build.configFile} "$TMP"
+          (
+            umask 0077
+            C="$TMP"/${cfgName}
+            S="$TMP"/secrets
+            ${cfg.secretsCommand} > "$S"
+            [ "$(${jq} -r type <"$S")" == "object" ] || {
+              log_err "secrets command did not produce an object"
+              exit 1
+            }
+            ${lib.concatMapStrings
+              (secret: let arg = lib.escapeShellArg secret; in ''
+                has="$(${jq} -r --arg s ${arg} 'has($s)' <"$S")"
+                $has || {
+                  log_err secret ${arg} not defined
+                  exit 1
+                }
+                ${pkgs.replace-secret}/bin/replace-secret \
+                  ${lib.escapeShellArg (secretName secret)} \
+                  <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
+                  "$C"
+              '')
+              (collectSecrets cfg.settings)}
+          )
+        '';
+        copy = ''
+          scp "$TMP"/${cfgName} device:/tmp/
+        '';
+        apply = ''
+          uci import < /tmp/${cfgName}
+          uci commit
 
-            (
-              cd /etc/config
-              for cfg in *; do
-                case "$cfg" in
-                  ${lib.optionalString (configured != []) ''
-                    ${lib.concatMapStringsSep "|" lib.escapeShellArg configured}) : ;;
-                  ''}
-                  *) rm "$cfg" ;;
-                esac
-              done
-            )
-          '';
-        };
+          (
+            cd /etc/config
+            for cfg in *; do
+              case "$cfg" in
+                ${lib.optionalString (configured != []) ''
+                  ${lib.concatMapStringsSep "|" lib.escapeShellArg configured}) : ;;
+                ''}
+                *) rm "$cfg" ;;
+              esac
+            done
+          )
+        '';
+      };
   };
 }

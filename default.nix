@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> { config = {}; overlays = []; }
+{ pkgs ? import <nixpkgs> { config = { }; overlays = [ ]; }
 , configuration
 }:
 

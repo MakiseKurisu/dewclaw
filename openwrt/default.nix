@@ -6,170 +6,172 @@ let
   devType = lib.types.submoduleWith {
     specialArgs.pkgs = pkgs;
     description = "OpenWRT configuration";
-    modules = [({ name, config, ... }: {
-      options = {
-        deploy = {
-          host = lib.mkOption {
-            type = lib.types.str;
-            default = name;
-            example = "192.168.0.1";
-            description = ''
-              Host to deploy to. Defaults to the attribute name, but this may have unintended
-              side-effects when deploying to the DNS server of the current network. Prefer
-              IP addresses or names of `ssh_config` host blocks for such cases.
-            '';
-          };
-
-          user = lib.mkOption {
-            type = lib.types.str;
-            default = "root";
-            visible = false;
-            description = ''
-              User name for SSH connections. Doesn't currently to anything useful considering
-              that we don't have any kind of `useSudo` option.
-            '';
-          };
-
-          sshConfig = lib.mkOption {
-            type = with lib.types; attrsOf (oneOf [ str int bool path ]);
-            default = {};
-            description = ''
-              SSH options to apply to connections, see {manpage}`ssh_config(5)`.
-              Notably these are *not* command-line arguments, although they *will*
-              be passed as `-o...` arguments.
-            '';
-          };
-
-          rebootAllowance = lib.mkOption {
-            type = lib.types.ints.unsigned;
-            default = 60;
-            description = ''
-              How long to wait (in seconds) for the device to come back up.
-              The timer runs on the deploying host and starts when the device reboots.
-            '';
-          };
-
-          rollbackTimeout = lib.mkOption {
-            type = lib.types.ints.unsigned;
-            default = 60;
-            description = ''
-              How long to wait (in seconds) before rolling back to the old configuration.
-              The timer runs on the device and starts once the device has completed its boot cycle.
-
-              ::: {.warning}
-              Values under `20` will very likely cause spurious rollbacks.
-              :::
-
-              ::: {.note}
-              During reload-only deployment this timeout *includes* the time needed to apply
-              configuration, which may be substatial if network activity is necessary (eg when
-              installing packages).
-              :::
-            '';
-          };
-
-          reloadServiceWait = lib.mkOption {
-            type = lib.types.ints.unsigned;
-            default = 10;
-            description = ''
-              How long to wait (in seconds) during reload-only deployment to allow for more
-              graceful service restarts. Small values make reloads faster, but since OpenWRT
-              has no mechanism to figure out *when* all services are done starting this also
-              introduces possible failure points.
-            '';
-          };
-        };
-
-        build = lib.mkOption {
-          type = lib.types.attrsOf lib.types.unspecified;
-          internal = true;
-        };
-
-        deploySteps = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
-            options = {
-              name = lib.mkOption {
-                type = lib.types.str;
-                default = name;
-                internal = true;
-              };
-              priority = lib.mkOption {
-                type = lib.types.int;
-                internal = true;
-              };
-
-              prepare = lib.mkOption {
-                type = lib.types.lines;
-                default = "";
-                internal = true;
-              };
-              copy = lib.mkOption {
-                type = lib.types.lines;
-                default = "";
-                internal = true;
-              };
-              apply = lib.mkOption {
-                type = lib.types.lines;
-                internal = true;
-              };
+    modules = [
+      ({ name, config, ... }: {
+        options = {
+          deploy = {
+            host = lib.mkOption {
+              type = lib.types.str;
+              default = name;
+              example = "192.168.0.1";
+              description = ''
+                Host to deploy to. Defaults to the attribute name, but this may have unintended
+                side-effects when deploying to the DNS server of the current network. Prefer
+                IP addresses or names of `ssh_config` host blocks for such cases.
+              '';
             };
-          }));
-          internal = true;
-          default = {};
+
+            user = lib.mkOption {
+              type = lib.types.str;
+              default = "root";
+              visible = false;
+              description = ''
+                User name for SSH connections. Doesn't currently to anything useful considering
+                that we don't have any kind of `useSudo` option.
+              '';
+            };
+
+            sshConfig = lib.mkOption {
+              type = with lib.types; attrsOf (oneOf [ str int bool path ]);
+              default = { };
+              description = ''
+                SSH options to apply to connections, see {manpage}`ssh_config(5)`.
+                Notably these are *not* command-line arguments, although they *will*
+                be passed as `-o...` arguments.
+              '';
+            };
+
+            rebootAllowance = lib.mkOption {
+              type = lib.types.ints.unsigned;
+              default = 60;
+              description = ''
+                How long to wait (in seconds) for the device to come back up.
+                The timer runs on the deploying host and starts when the device reboots.
+              '';
+            };
+
+            rollbackTimeout = lib.mkOption {
+              type = lib.types.ints.unsigned;
+              default = 60;
+              description = ''
+                How long to wait (in seconds) before rolling back to the old configuration.
+                The timer runs on the device and starts once the device has completed its boot cycle.
+
+                ::: {.warning}
+                Values under `20` will very likely cause spurious rollbacks.
+                :::
+
+                ::: {.note}
+                During reload-only deployment this timeout *includes* the time needed to apply
+                configuration, which may be substatial if network activity is necessary (eg when
+                installing packages).
+                :::
+              '';
+            };
+
+            reloadServiceWait = lib.mkOption {
+              type = lib.types.ints.unsigned;
+              default = 10;
+              description = ''
+                How long to wait (in seconds) during reload-only deployment to allow for more
+                graceful service restarts. Small values make reloads faster, but since OpenWRT
+                has no mechanism to figure out *when* all services are done starting this also
+                introduces possible failure points.
+              '';
+            };
+          };
+
+          build = lib.mkOption {
+            type = lib.types.attrsOf lib.types.unspecified;
+            internal = true;
+          };
+
+          deploySteps = lib.mkOption {
+            type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
+              options = {
+                name = lib.mkOption {
+                  type = lib.types.str;
+                  default = name;
+                  internal = true;
+                };
+                priority = lib.mkOption {
+                  type = lib.types.int;
+                  internal = true;
+                };
+
+                prepare = lib.mkOption {
+                  type = lib.types.lines;
+                  default = "";
+                  internal = true;
+                };
+                copy = lib.mkOption {
+                  type = lib.types.lines;
+                  default = "";
+                  internal = true;
+                };
+                apply = lib.mkOption {
+                  type = lib.types.lines;
+                  internal = true;
+                };
+              };
+            }));
+            internal = true;
+            default = { };
+          };
         };
-      };
 
-      imports = [
-        ./etc.nix
-        ./packages.nix
-        ./uci.nix
-        ./users.nix
-      ];
+        imports = [
+          ./etc.nix
+          ./packages.nix
+          ./uci.nix
+          ./users.nix
+        ];
 
-      config = {
-        build.deploy =
-          let
-            steps = lib.sort (a: b: a.priority < b.priority) (lib.attrValues config.deploySteps);
-            prepare = lib.concatMapStringsSep "\n\n" (s: "# prepare ${s.name}\n${s.prepare}") steps;
-            copy = lib.concatMapStringsSep "\n\n" (s: "# copy ${s.name}\n${s.copy}") steps;
-            config_generation = pkgs.runCommand "config_generation.sh" {
-                src = ./config_generation.sh;
-                deploy_steps = ''
-                  ${lib.concatMapStrings
-                    (s: ''
-                      # apply ${s.name}
-                      log "running ${s.name} ..."
-                      ${s.apply}
-                    '')
-                    steps}
-                '';
-                rollback_timeout = config.deploy.rollbackTimeout;
-                reload_service_wait = config.deploy.reloadServiceWait;
-            } ''
-              substitute "$src" "$out" \
-                --subst-var deploy_steps \
-                --subst-var rollback_timeout \
-                --subst-var reload_service_wait
-              chmod +x "$out"
-            '';
-            rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
-            reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;
-            sshOpts =
-              ''-o ControlPath="$TMP/cm" ''
-              + lib.escapeShellArgs
-                (lib.mapAttrsToList
-                  (arg: val: "-o${arg}=${
+        config = {
+          build.deploy =
+            let
+              steps = lib.sort (a: b: a.priority < b.priority) (lib.attrValues config.deploySteps);
+              prepare = lib.concatMapStringsSep "\n\n" (s: "# prepare ${s.name}\n${s.prepare}") steps;
+              copy = lib.concatMapStringsSep "\n\n" (s: "# copy ${s.name}\n${s.copy}") steps;
+              config_generation = pkgs.runCommand "config_generation.sh"
+                {
+                  src = ./config_generation.sh;
+                  deploy_steps = ''
+                    ${lib.concatMapStrings
+                      (s: ''
+                        # apply ${s.name}
+                        log "running ${s.name} ..."
+                        ${s.apply}
+                      '')
+                      steps}
+                  '';
+                  rollback_timeout = config.deploy.rollbackTimeout;
+                  reload_service_wait = config.deploy.reloadServiceWait;
+                } ''
+                substitute "$src" "$out" \
+                  --subst-var deploy_steps \
+                  --subst-var rollback_timeout \
+                  --subst-var reload_service_wait
+                chmod +x "$out"
+              '';
+              rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
+              reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;
+              sshOpts =
+                ''-o ControlPath="$TMP/cm" ''
+                + lib.escapeShellArgs
+                  (lib.mapAttrsToList
+                    (arg: val: "-o${arg}=${
                     if val == true then "yes"
                     else if val == false then "no"
                     else toString val
                   }")
-                  ({
-                    ControlMaster = "auto";
-                    User = config.deploy.user;
-                    Hostname = config.deploy.host;
-                  } // config.deploy.sshConfig)
-                );
-          in
+                    ({
+                      ControlMaster = "auto";
+                      User = config.deploy.user;
+                      Hostname = config.deploy.host;
+                    } // config.deploy.sshConfig)
+                  );
+            in
             pkgs.writeShellScriptBin "deploy-${name}" ''
               set -euo pipefail
               shopt -s inherit_errexit
@@ -264,8 +266,9 @@ let
                 *) _wait ;;
               esac
             '';
-      };
-    })];
+        };
+      })
+    ];
   };
 
 in
@@ -273,7 +276,7 @@ in
 {
   options.openwrt = lib.mkOption {
     type = lib.types.attrsOf devType;
-    default = {};
+    default = { };
     description = ''
       OpenWRT device configurations. Each attribute will produce an indepdent deployment
       script that applies the corresponding configuration to the target device.
