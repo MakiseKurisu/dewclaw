@@ -1,6 +1,6 @@
 # How to use
 
-dewclaw can declaratively manage some (but by far not all) aspects of OpenWRT devices.
+dewclaw can declaratively manage some (but by far not all) aspects of OpenWrt devices.
 Packages can be installed (and subsequently removed) declaratively by listing them in the `packages` option.
 UCI configs can be set declaratively using the `uci.settings` hierarchy, or be marked for imperative configuration by adding the appropriate package names to `uci.retain`.
 Files in `/etc` can be create with the `etc` hierarchy.
@@ -68,7 +68,7 @@ After a reboot the device will wait for a set amount of time before automaticall
 ### Reload-only deployment
 
 Deploy scripts also accept a `--reload` argument to instruct the device to only reload UCI configuration instead of rebooting.
-This is faster and less disruptive but may have unintended side-effects on services that are not properly configured by OpenWRT's `reload_config` and should thus be used with care.
+This is faster and less disruptive but may have unintended side-effects on services that are not properly configured by OpenWrt's `reload_config` and should thus be used with care.
 Despite not rebooting to apply the configuration this mode also takes a snapshot and performs a rollback if no confirmation is provided.
 
 [sops]: https://github.com/getsops/sops

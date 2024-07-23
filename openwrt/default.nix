@@ -5,7 +5,7 @@ let
 
   devType = lib.types.submoduleWith {
     specialArgs.pkgs = pkgs;
-    description = "OpenWRT configuration";
+    description = "OpenWrt configuration";
     modules = [
       ({ name, config, ... }: {
         options = {
@@ -74,7 +74,7 @@ let
               default = 10;
               description = ''
                 How long to wait (in seconds) during reload-only deployment to allow for more
-                graceful service restarts. Small values make reloads faster, but since OpenWRT
+                graceful service restarts. Small values make reloads faster, but since OpenWrt
                 has no mechanism to figure out *when* all services are done starting this also
                 introduces possible failure points.
               '';
@@ -278,7 +278,7 @@ in
     type = lib.types.attrsOf devType;
     default = { };
     description = ''
-      OpenWRT device configurations. Each attribute will produce an indepdent deployment
+      OpenWrt device configurations. Each attribute will produce an indepdent deployment
       script that applies the corresponding configuration to the target device.
     '';
   };
