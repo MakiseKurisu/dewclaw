@@ -60,7 +60,7 @@ jobs:
             nix build ".#$i"
             mkdir -p "out/$i"
             output=$(readlink -f result)
-            cp -vr --dereference "$output" "out/$i"
+            cp -vr --dereference "$output/." "out/$i"
           done
 
       - name: Upload archive to Artifacts
