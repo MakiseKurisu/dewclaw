@@ -1,0 +1,58 @@
+name: Deploy website
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches:
+      - "main"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "github-pages"
+  cancel-in-progress: false
+
+jobs:
+  site-artifact:
+    name: Build site artifact
+    uses: ./.github/workflows/build.yaml
+  deploy:
+    needs: site-artifact
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Get built site
+        uses: actions/download-artifact@v4
+        with:
+          name: 'out'
+          path: 'out'
+
+      # *sigh* https://github.com/actions/upload-pages-artifact#artifact-validation
+      # They won't use the raw artifact zip
+      - name: Repack archive
+        run: |
+          cd out/dewclaw-book
+          tar cf ../pages.tar.gz .
+
+      - name: Upload repacked archive to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'github-pages'
+          path: 'out/pages.tar.gz'
+          if-no-files-found: error
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
