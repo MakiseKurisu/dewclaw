@@ -229,6 +229,7 @@ let
                 # apply the new config and wait for the box to go down via ssh connection
                 # timeout.
                 log 'applying config'
+                ssh -Nf
                 if $RELOAD_ONLY; then
                   ssh 'logread -l9999 -f' &
                   ssh '/etc/init.d/config_generation prepare_reload'
