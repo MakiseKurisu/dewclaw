@@ -7,6 +7,7 @@
     description = ''
       Hashed password of the user. This should be either a disabled password
       (e.g. `*` or `!`) or use MD5, SHA256, or SHA512.
+      You can use `openssl passwd -6 -stdin` to generate this hash.
     '';
   };
 
