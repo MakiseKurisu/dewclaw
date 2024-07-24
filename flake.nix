@@ -17,7 +17,7 @@
         formatter = pkgs.nixpkgs-fmt;
         packages = {
           dewclaw-env = pkgs.callPackage ./default.nix {
-            configuration = import ./example/example.nix;
+            configuration = import ./example/classic/example.nix;
           };
           dewclaw-book = pkgs.callPackage ./doc { };
           default = self.packages.x86_64-linux.dewclaw-env;
