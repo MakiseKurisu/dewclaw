@@ -23,7 +23,7 @@ let
           if removed != decl
           then {
             url =
-              "https://git.eno.space/dewclaw.git/tree${removed}"
+              "https://github.com/MakiseKurisu/dewclaw/blob/main${removed}"
               + (if pkgs.lib.hasSuffix ".nix" removed
               then ""
               else "/default.nix");
