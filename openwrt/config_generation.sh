@@ -17,6 +17,7 @@ _rollback() {
         rm -rf /overlay/upper.dead
     else
         echo "rollback failed, manual recovery needed. check /overlay/upper.dead!" >&2
+        trap '' EXIT
         exit 1
     fi
 }
