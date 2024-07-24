@@ -132,7 +132,7 @@ commit() {
 
 start() {
     [ -d /overlay/upper.prev ] || {
-        log 'no configuration reload in progress. rollback service might be left enabled by accident. clean up ...'
+        echo 'no configuration reload in progress. rollback service might be left enabled by accident. clean up ...' 
         _unregister_script
         exit 0
     }
