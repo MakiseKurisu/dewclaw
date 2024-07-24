@@ -14,6 +14,7 @@ _rollback() {
     if ! grep -q overlayfs /proc/mounts
     then
         echo "no overlayfs found but rollback is still requested. manual recovery needed" >&2
+        rm -rf /overlay/upper.prev
         trap '' EXIT
         exit 1
     fi
@@ -50,7 +51,8 @@ _prepare_apply() {
 
     if ! grep -q overlayfs /proc/mounts
     then
-        log "no overlayfs found. rollback will not be possible"
+        log "no overlayfs found. real rollback will not be possible"
+        mkdir -p /overlay/upper.prev
     elif ! rm -rf /overlay/upper.prev/ \
         || ! cp -al /overlay/upper/ /overlay/upper.prev/ \
         || ! rm -rf /overlay/upper.prev/etc/ \
