@@ -10,6 +10,14 @@ _unregister_script() {
 
 _rollback() {
     rm -rf /overlay/upper.dead
+
+    if ! grep -q overlayfs /proc/mounts
+    then
+        echo "no overlayfs found but rollback is still requested. manual recovery needed" >&2
+        trap '' EXIT
+        exit 1
+    fi
+
     mv /overlay/upper /overlay/upper.dead
     # this should never fail, unless something *else* is also mucking
     # with overlayfs state.
@@ -40,7 +48,10 @@ _prepare_apply() {
         exit 1
     fi
 
-    if ! rm -rf /overlay/upper.prev/ \
+    if ! grep -q overlayfs /proc/mounts
+    then
+        log "no overlayfs found. rollback will not be possible"
+    elif ! rm -rf /overlay/upper.prev/ \
         || ! cp -al /overlay/upper/ /overlay/upper.prev/ \
         || ! rm -rf /overlay/upper.prev/etc/ \
         || ! cp -a /overlay/upper/etc/ /overlay/upper.prev/
