@@ -29,6 +29,9 @@
     };
 
     packages = [ "losetup" "mount-utils" "coreutils-stat" "htop" ];
+    providers = {
+      dnsmasq = "dnsmasq-full";
+    };
     users.root.hashedPassword = "$6$n/dIMAV5QZyMp6UQ$fSvzsPZ8Vl1kzq9Mm3oQy81hxDkPqv04YPSlBOpqjMQKGu6xjcIuXrrfvf3Dcm8ea46oG8XtEPm6AViOFESF81";
     etc."dropbear/authorized_keys".text = ''
       ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHGQEKlJPpUkR+NQHObd1CWWM7ItbkFLk80PyK+b+2EN example@key
