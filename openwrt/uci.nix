@@ -61,7 +61,12 @@ let
   uciIdentifierCheck = type: attrs:
     let
       invalid = lib.filter
-        (n: builtins.match "[a-zA-Z0-9_]+" n == null)
+        (n: builtins.match (
+          if type == "config" then
+            "[a-zA-Z0-9_-]+"
+          else
+            "[a-zA-Z0-9_]+"
+        ) n == null)
         (lib.attrNames attrs);
     in
     lib.warnIf
