@@ -43,7 +43,7 @@ in
           (lib.mapAttrsToList
             (name: file: lib.optionalString (file.enable) ''
               ${lib.optionalString (dirOf name != ".") ''
-                mkdir -p ${lib.escapeShellArg (dirOf name)}
+                mkdir -p ${lib.escapeShellArg (dirOf "/etc/${name}")}
               ''}
               echo ${lib.escapeShellArg file.text} >${lib.escapeShellArg "/etc/${name}"}
             '')
