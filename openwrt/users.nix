@@ -14,7 +14,7 @@
 
   config = {
     deploySteps.rootPassword = lib.mkIf (config.users.root.hashedPassword != null) {
-      priority = 5000;
+      priority = 10;
       apply = ''
         (
           umask 0077

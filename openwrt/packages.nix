@@ -18,7 +18,7 @@ in
 
   config = {
     deploySteps.packages = {
-      priority = 9999;
+      priority = 80;
       copy = ''
         scp ${deps} device:/tmp/deps-${deps.version}.ipk
       '';

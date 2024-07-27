@@ -37,7 +37,7 @@ in
 
   config = lib.mkIf (cfg != { }) {
     deploySteps.etc = {
-      priority = 8000;
+      priority = 20;
       apply =
         lib.concatStrings
           (lib.mapAttrsToList

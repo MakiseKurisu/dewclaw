@@ -190,7 +190,7 @@ in
         configured = lib.attrNames config.uci.settings ++ config.uci.retain;
       in
       {
-        priority = 4999;
+        priority = 90;
         prepare = ''
           cp --no-preserve=all ${config.build.configFile} "$TMP"
           (
