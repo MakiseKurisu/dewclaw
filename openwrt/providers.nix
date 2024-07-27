@@ -35,7 +35,7 @@ in
             (
               pkg="${name}"
               provider="${value}"
-              if ! opkg status "$provider" 2>/dev/null | grep -qe Status: | grep -q installed; then
+              if ! opkg status "$provider" 2>/dev/null | grep -e Status: | grep -q installed; then
                 temp="$(mktemp -d)"
                 cd "$temp"
                 opkg download "$provider"
