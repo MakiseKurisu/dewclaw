@@ -126,6 +126,7 @@ let
           ./uci.nix
           ./users.nix
           ./providers.nix
+          ./services
         ];
 
         config = {

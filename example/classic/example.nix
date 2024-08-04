@@ -37,6 +37,10 @@
       ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHGQEKlJPpUkR+NQHObd1CWWM7ItbkFLk80PyK+b+2EN example@key
     '';
 
+    services = {
+      qemu-ga.enable = true;
+    };
+
     uci.sopsSecrets = ./secrets.yaml;
     # leave the ucitrack and firewall packages as they are, retaining defaults if
     # freshly installed. the firewall rules are verbose and ucitrack is mostly not
