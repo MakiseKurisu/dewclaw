@@ -6,14 +6,14 @@ in
 
 {
   options.services.qemu-ga = {
-    enable = lib.mkEnableOption (lib.mdDoc "Enable qemu-ga service.");
+    enable = lib.mkEnableOption "QEMU guest agent";
 
     package = lib.mkOption {
       default = "qemu-ga";
       example = "qemu-ga";
       type = lib.types.str;
       description = ''
-        qemu-ga package to use.
+        QEMU guest agent package to use.
       '';
     };
   };

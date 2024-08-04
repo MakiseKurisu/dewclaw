@@ -6,10 +6,10 @@ in
 
 {
   options.services.statistics = {
-    enable = lib.mkEnableOption (lib.mdDoc "Enable statistics service.");
+    enable = lib.mkEnableOption "statistics service";
 
     backup = {
-      enable = lib.mkEnableOption (lib.mdDoc "Enable statistics periodical backup service.") // { default = true; };
+      enable = lib.mkEnableOption "statistics periodical backup service" // { default = true; };
 
       period = lib.mkOption {
         default = "0 * * * *";
@@ -26,7 +26,7 @@ in
 
     monitors = {
       interfaces = {
-        enable = lib.mkEnableOption (lib.mdDoc "Monitor network interfaces.") // { default = true; };
+        enable = lib.mkEnableOption "network interface monitors" // { default = true; };
 
         targets = lib.mkOption {
           default = [];
