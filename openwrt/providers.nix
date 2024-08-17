@@ -38,11 +38,11 @@ in
               if ! opkg status "$provider" 2>/dev/null | grep -e Status: | grep -q installed; then
                 temp="$(mktemp -d)"
                 cd "$temp"
-                opkg download "$provider"
+                opkg download "$pkg" "$provider"
                 cd "$OLDPWD"
                 opkg install "$provider" --cache . || true
                 opkg remove "$pkg"
-                opkg install "$provider" --cache .
+                opkg install "$provider" --cache . || opkg install "$pkg" --cache .
                 rm -rf "$temp"
               fi
             )
