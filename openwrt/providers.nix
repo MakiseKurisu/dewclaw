@@ -44,6 +44,12 @@ in
                 opkg remove "$pkg"
                 opkg install "$provider" --cache . || opkg install "$pkg" --cache .
                 rm -rf "$temp"
+                if [ "$provider" == "dnsmasq-full" ]; then
+                  # workaround dnsmasq-full bug when running in lxc
+                  # https://forum.openwrt.org/t/multiple-dhcp-dns-server-instances-not-work/130849/11
+                  sed -i "s|procd_add_jail_mount /etc/passwd|procd_add_jail_mount /dev/urandom /etc/passwd|" /etc/init.d/dnsmasq
+                  service dnsmasq start
+                fi
               fi
             )
           '')
