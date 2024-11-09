@@ -48,7 +48,7 @@ in
                   # workaround dnsmasq-full bug when running in lxc
                   # https://forum.openwrt.org/t/multiple-dhcp-dns-server-instances-not-work/130849/11
                   sed -i "s|procd_add_jail_mount /etc/passwd|procd_add_jail_mount /dev/urandom /etc/passwd|" /etc/init.d/dnsmasq
-                  service dnsmasq start
+                  /etc/init.d/dnsmasq start
                 fi
               fi
             )
