@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> { }
 }:
 
-import ../. {
+import ../../. {
   inherit pkgs;
   configuration = ./example.nix;
 }
