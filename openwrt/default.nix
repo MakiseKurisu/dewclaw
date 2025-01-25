@@ -207,12 +207,18 @@ let
                 RELOAD_ONLY=false
                 TIMEOUT=${toString rebootTimeout}s
 
-                case "$@" in
-                  --reload) RELOAD_ONLY=true
-                            TIMEOUT=${toString reloadTimeout}s
-                            ;;
-                  "") ;;
-                esac
+                for arg in "$@"; do
+                  case "$arg" in
+                    --reload)
+                      RELOAD_ONLY=true
+                      TIMEOUT=${toString reloadTimeout}s
+                      ;;
+                    *)
+                      echo "error: unknown argument: $arg" >&2
+                      exit 1
+                      ;;
+                  esac
+                done
 
                 export TMP="$(umask 0077; mktemp -d)"
 
