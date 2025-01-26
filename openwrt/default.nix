@@ -240,7 +240,7 @@ let
                   ssh -O exit
                 else
                   ssh 'logread -l9999 -f' &
-                  ssh 'service config_generation apply_reboot 2>&1 | logger -t '"$TAG"
+                  ssh '/etc/init.d/config_generation apply_reboot 2>&1 | logger -t '"$TAG"
                   # if the previous command succeeded we're up for a reboot, at which
                   # point ssh will exit with a 255 status
                   wait %1 || true
