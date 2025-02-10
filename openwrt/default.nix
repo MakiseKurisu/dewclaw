@@ -203,16 +203,36 @@ let
                 command scp -Op ${sshOpts} "$@"
               }
 
+              usage() {
+                echo "usage: $(basename "$0") [options]"
+                echo
+                echo "options:"
+                echo "  --help        Show this help"
+                echo "  --reload      Reload/deploy config without rebooting"
+              }
+
               main() {
                 RELOAD_ONLY=false
                 TIMEOUT=${toString rebootTimeout}s
 
-                case "$@" in
-                  --reload) RELOAD_ONLY=true
-                            TIMEOUT=${toString reloadTimeout}s
-                            ;;
-                  "") ;;
-                esac
+                for arg in "$@"; do
+                  case "$arg" in
+                    --help)
+                      usage
+                      exit 0
+                      ;;
+                    --reload)
+                      RELOAD_ONLY=true
+                      TIMEOUT=${toString reloadTimeout}s
+                      ;;
+                    *)
+                      echo "error: unknown argument: $arg" >&2
+                      echo >&2
+                      usage >&2
+                      exit 1
+                      ;;
+                  esac
+                done
 
                 export TMP="$(umask 0077; mktemp -d)"
 
