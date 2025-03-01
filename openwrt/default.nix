@@ -270,7 +270,7 @@ let
                 # timeout.
                 log 'applying config'
                 ssh -Nf
-                if !$DEPLOY_CONFIRMATION; then
+                if ! $DEPLOY_CONFIRMATION; then
                   log 'disabling deployment confirmation'
                   ssh '/etc/init.d/config_generation yolo'
                 fi
