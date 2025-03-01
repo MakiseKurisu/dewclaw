@@ -204,11 +204,13 @@ let
               }
 
               usage() {
-                echo "usage: $(basename "$0") [options]"
-                echo
-                echo "options:"
-                echo "  --help        Show this help"
-                echo "  --reload      Reload/deploy config without rebooting"
+                cat << EOF
+              usage: $(basename "$0") [options]
+              options:
+                --help            Show this help
+                --reload          Reload/deploy config without rebooting
+                --no-confirmation Skip successful deployment confirmation
+              EOF
               }
 
               main() {
