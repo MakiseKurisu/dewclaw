@@ -250,6 +250,7 @@ let
                       ;;
                     --no-host-key-checking)
                       EXTRA_SSH_OPTION="-oStrictHostKeyChecking=no"
+                      ;;
                     --)
                       break
                       ;;
