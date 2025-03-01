@@ -130,6 +130,10 @@ commit() {
     touch /tmp/.abort-rollback
 }
 
+yolo() {
+    touch /etc/.abort-rollback
+}
+
 start() {
     [ -d /overlay/upper.prev ] || {
         echo 'no configuration reload in progress. rollback service might be left enabled by accident. clean up ...' 
@@ -142,11 +146,11 @@ start() {
 
     while [ $timeout -gt 0 ]; do
         timeout=$(( timeout - 1 ))
-        [ -e /tmp/.abort-rollback ] && {
+        if [ -e /tmp/.abort-rollback ] || [ -e /etc/.abort-rollback ]; then
             needs_rollback=false
-            rm /tmp/.abort-rollback
+            rm -f /tmp/.abort-rollback /etc/.abort-rollback
             break
-        }
+        fi
         sleep 1
     done
 

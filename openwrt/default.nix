@@ -213,6 +213,8 @@ let
 
               main() {
                 RELOAD_ONLY=false
+                DEPLOY_CONFIRMATION=true
+
                 TIMEOUT=${toString rebootTimeout}s
 
                 for arg in "$@"; do
@@ -224,6 +226,9 @@ let
                     --reload)
                       RELOAD_ONLY=true
                       TIMEOUT=${toString reloadTimeout}s
+                      ;;
+                    --yolo|--no-confirmation)
+                      DEPLOY_CONFIRMATION=false
                       ;;
                     *)
                       echo "error: unknown argument: $arg" >&2
@@ -252,6 +257,10 @@ let
                 # timeout.
                 log 'applying config'
                 ssh -Nf
+                if !$DEPLOY_CONFIRMATION; then
+                  log 'disabling deployment confirmation'
+                  ssh '/etc/init.d/config_generation yolo'
+                fi
                 if $RELOAD_ONLY; then
                   ssh 'logread -l9999 -f' &
                   ssh '/etc/init.d/config_generation prepare_reload'
@@ -269,11 +278,13 @@ let
                       $2 { print $2 }
                     '
 
-                log 'waiting for device to return'
-                __DO_WAIT=1 timeout --foreground $TIMEOUT "$0" || {
-                  log_err 'configuration change failed, device will roll back and reboot'
-                  exit 1
-                }
+                if $DEPLOY_CONFIRMATION; then
+                  log 'waiting for device to return'
+                  __DO_WAIT=1 timeout --foreground $TIMEOUT "$0" || {
+                    log_err 'configuration change failed, device will roll back and reboot'
+                    exit 1
+                  }
+                fi
 
                 log 'new configuration applied'
               }
