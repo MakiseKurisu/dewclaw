@@ -207,10 +207,11 @@ let
                 cat << EOF
               usage: $(basename "$0") [options]
               options:
-                -h|--help            Show this help
-                -r|--reload          Reload/deploy config without rebooting
-                -y|--no-confirmation Skip successful deployment confirmation
-                -t|--target <host>   Override the deployment host
+                -h|--help               Show this help
+                -r|--reload             Reload/deploy config without rebooting
+                -y|--no-confirmation    Skip successful deployment confirmation
+                -t|--target <host>      Override the deployment host
+                --no-host-key-checking  Disable SSH host checking at confirmation
               EOF
               }
 
@@ -218,11 +219,12 @@ let
                 RELOAD_ONLY=false
                 DEPLOY_CONFIRMATION=true
                 TARGET_HOST=${config.deploy.host}
+                EXTRA_SSH_OPTION=
 
                 TIMEOUT=${toString rebootTimeout}s
 
                 local TEMP
-                if ! TEMP="$(getopt -o "hryt:" -l "help,reload,yolo,no-confirmation,target:" -n "$0" -- "$@")"; then
+                if ! TEMP="$(getopt -o "hryt:" -l "help,reload,yolo,no-confirmation,target:,no-host-key-checking" -n "$0" -- "$@")"; then
                   return
                 fi
                 eval set -- "$TEMP"
@@ -246,6 +248,8 @@ let
                       TARGET_HOST=$1
                       shift
                       ;;
+                    --no-host-key-checking)
+                      EXTRA_SSH_OPTION="-oStrictHostKeyChecking=no"
                     --)
                       break
                       ;;
@@ -303,7 +307,7 @@ let
               }
 
               _wait() {
-                while ! TARGET_HOST=${config.deploy.host} ssh -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
+                while ! TARGET_HOST=${config.deploy.host} ssh $EXTRA_SSH_OPTION -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
                   sleep 1
                 done
               }
