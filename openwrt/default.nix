@@ -158,6 +158,7 @@ let
               '';
               rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
               reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;
+              hostname = config.deploy.host;
               sshOpts =
                 ''-o ControlPath="$TMP/cm" ''
                 + lib.escapeShellArgs
@@ -170,7 +171,6 @@ let
                     ({
                       ControlMaster = "auto";
                       User = config.deploy.user;
-                      Hostname = config.deploy.host;
                     } // config.deploy.sshConfig)
                   );
             in
@@ -196,11 +196,11 @@ let
               TAG="apply_config_$$_$RANDOM"
 
               ssh() {
-                command ssh -n ${sshOpts} device "$@"
+                command ssh -n ${sshOpts} -oHostname=$TARGET_HOST device "$@"
               }
 
               scp() {
-                command scp -Op ${sshOpts} "$@"
+                command scp -Op ${sshOpts} -oHostname=$TARGET_HOST "$@"
               }
 
               usage() {
@@ -210,17 +210,19 @@ let
                 -h|--help            Show this help
                 -r|--reload          Reload/deploy config without rebooting
                 -y|--no-confirmation Skip successful deployment confirmation
+                -t|--target <host>   Override the deployment host
               EOF
               }
 
               main() {
                 RELOAD_ONLY=false
                 DEPLOY_CONFIRMATION=true
+                TARGET_HOST=${config.deploy.host}
 
                 TIMEOUT=${toString rebootTimeout}s
 
                 local TEMP
-                if ! TEMP="$(getopt -o "hry" -l "help,reload,yolo,no-confirmation" -n "$0" -- "$@")"; then
+                if ! TEMP="$(getopt -o "hryt:" -l "help,reload,yolo,no-confirmation,target:" -n "$0" -- "$@")"; then
                   return
                 fi
                 eval set -- "$TEMP"
@@ -239,6 +241,10 @@ let
                       ;;
                     -y|--yolo|--no-confirmation)
                       DEPLOY_CONFIRMATION=false
+                      ;;
+                    -t|--target)
+                      TARGET_HOST=$1
+                      shift
                       ;;
                     --)
                       break
@@ -297,7 +303,7 @@ let
               }
 
               _wait() {
-                while ! ssh -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
+                while ! TARGET_HOST=${config.deploy.host} ssh -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
                   sleep 1
                 done
               }
