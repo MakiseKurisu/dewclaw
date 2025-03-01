@@ -207,9 +207,9 @@ let
                 cat << EOF
               usage: $(basename "$0") [options]
               options:
-                --help            Show this help
-                --reload          Reload/deploy config without rebooting
-                --no-confirmation Skip successful deployment confirmation
+                -h|--help            Show this help
+                -r|--reload          Reload/deploy config without rebooting
+                -y|--no-confirmation Skip successful deployment confirmation
               EOF
               }
 
@@ -219,24 +219,29 @@ let
 
                 TIMEOUT=${toString rebootTimeout}s
 
-                for arg in "$@"; do
-                  case "$arg" in
-                    --help)
+                local TEMP
+                if ! TEMP="$(getopt -o "hry" -l "help,reload,yolo,no-confirmation" -n "$0" -- "$@")"; then
+                  return
+                fi
+                eval set -- "$TEMP"
+
+                while true; do
+                  TEMP="$1"
+                  shift
+                  case "$TEMP" in
+                    -h|--help)
                       usage
                       exit 0
                       ;;
-                    --reload)
+                    -r|--reload)
                       RELOAD_ONLY=true
                       TIMEOUT=${toString reloadTimeout}s
                       ;;
-                    --yolo|--no-confirmation)
+                    -y|--yolo|--no-confirmation)
                       DEPLOY_CONFIRMATION=false
                       ;;
-                    *)
-                      echo "error: unknown argument: $arg" >&2
-                      echo >&2
-                      usage >&2
-                      exit 1
+                    --)
+                      break
                       ;;
                   esac
                 done
