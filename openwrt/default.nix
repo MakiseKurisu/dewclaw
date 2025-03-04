@@ -219,9 +219,9 @@ let
                 RELOAD_ONLY=false
                 DEPLOY_CONFIRMATION=true
                 TARGET_HOST=${config.deploy.host}
-                EXTRA_SSH_OPTION=
+                EXTRA_SSH_OPTION=""
 
-                TIMEOUT=${toString rebootTimeout}s
+                TIMEOUT=${toString rebootTimeout}
 
                 local TEMP
                 if ! TEMP="$(getopt -o "hryt:" -l "help,reload,yolo,no-confirmation,target:,no-host-key-checking" -n "$0" -- "$@")"; then
@@ -239,7 +239,7 @@ let
                       ;;
                     -r|--reload)
                       RELOAD_ONLY=true
-                      TIMEOUT=${toString reloadTimeout}s
+                      TIMEOUT=${toString reloadTimeout}
                       ;;
                     -y|--yolo|--no-confirmation)
                       DEPLOY_CONFIRMATION=false
@@ -298,25 +298,22 @@ let
 
                 if $DEPLOY_CONFIRMATION; then
                   log 'waiting for device to return'
-                  __DO_WAIT=1 timeout --foreground $TIMEOUT "$0" || {
-                    log_err 'configuration change failed, device will roll back and reboot'
-                    exit 1
-                  }
+
+                  local final=$(( $(date +%s) + TIMEOUT ))
+                  while ! TARGET_HOST=${config.deploy.host} ssh $EXTRA_SSH_OPTION -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
+                    if (( $(date +%s) > final )); then
+                      log_err 'configuration change failed, device will roll back and reboot'
+                      exit 1
+                    else
+                      sleep 1
+                    fi
+                  done
                 fi
 
                 log 'new configuration applied'
               }
 
-              _wait() {
-                while ! TARGET_HOST=${config.deploy.host} ssh $EXTRA_SSH_OPTION -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
-                  sleep 1
-                done
-              }
-
-              case "''${__DO_WAIT:-}" in
-                "") main "$@" ;;
-                *) _wait ;;
-              esac
+              main "$@"
             '';
         };
       })
