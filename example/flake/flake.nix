@@ -16,7 +16,7 @@
     }: flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
       perSystem = { config, self', inputs', pkgs, system, ... }: {
-        formatter = pkgs.nixpkgs-fmt;
+        formatter = pkgs.nixfmt-rfc-style;
         packages = {
           dewclaw-env = pkgs.callPackage dewclaw {
             configuration = import ../classic/example.nix;

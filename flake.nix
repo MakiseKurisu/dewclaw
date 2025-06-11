@@ -14,13 +14,21 @@
     }: flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
       perSystem = { config, self', inputs', pkgs, system, ... }: {
-        formatter = pkgs.nixpkgs-fmt;
+        formatter = pkgs.nixfmt-rfc-style;
         packages = {
           dewclaw-env = pkgs.callPackage ./default.nix {
             configuration = import ./example/classic/example.nix;
           };
           dewclaw-book = pkgs.callPackage ./doc { };
           default = self.packages.x86_64-linux.dewclaw-env;
+        };
+
+        devShells.default = pkgs.mkShell {
+          packages = [
+            pkgs.nixfmt-rfc-style
+            pkgs.shfmt
+            pkgs.treefmt
+          ];
         };
       };
     };
