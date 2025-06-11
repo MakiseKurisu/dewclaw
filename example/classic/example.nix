@@ -37,7 +37,10 @@
     providers = {
       dnsmasq = "dnsmasq-full";
     };
-    users.root.hashedPassword = "$6$n/dIMAV5QZyMp6UQ$fSvzsPZ8Vl1kzq9Mm3oQy81hxDkPqv04YPSlBOpqjMQKGu6xjcIuXrrfvf3Dcm8ea46oG8XtEPm6AViOFESF81";
+
+    # The root_pw entry in the sescrets file contains the actual root password hash
+    users.root.hashedPasswordSecret = "root_pw";
+
     etc."dropbear/authorized_keys".text = ''
       ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHGQEKlJPpUkR+NQHObd1CWWM7ItbkFLk80PyK+b+2EN example@key
     '';
@@ -46,7 +49,8 @@
       qemu-ga.enable = true;
     };
 
-    uci.sopsSecrets = ./secrets.yaml;
+    sopsSecrets = ./secrets.yaml;
+
     # leave the ucitrack and firewall packages as they are, retaining defaults if
     # freshly installed. the firewall rules are verbose and ucitrack is mostly not
     # necessary, so we don't want to include either here. we also keep luci to not

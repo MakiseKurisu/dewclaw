@@ -1,4 +1,4 @@
-#!/bin/sh /etc/rc.common
+#!/bin/ash /etc/rc.common
 
 EXTRA_COMMANDS="apply_reboot prepare_reload apply_reload commit yolo"
 START=99
