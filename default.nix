@@ -1,5 +1,9 @@
-{ pkgs ? import <nixpkgs> { config = { }; overlays = [ ]; }
-, configuration
+{
+  pkgs ? import <nixpkgs> {
+    config = { };
+    overlays = [ ];
+  },
+  configuration,
 }:
 
 let
@@ -19,8 +23,5 @@ pkgs.buildEnv rec {
 
   paths = builtins.attrValues passthru.targets;
 
-  passthru.targets =
-    pkgs.lib.mapAttrs
-      (_: dev: dev.build.deploy)
-      evaluated.config.openwrt;
+  passthru.targets = pkgs.lib.mapAttrs (_: dev: dev.build.deploy) evaluated.config.openwrt;
 }

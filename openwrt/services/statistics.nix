@@ -9,7 +9,9 @@ in
     enable = lib.mkEnableOption "statistics service";
 
     backup = {
-      enable = lib.mkEnableOption "statistics periodical backup service" // { default = true; };
+      enable = lib.mkEnableOption "statistics periodical backup service" // {
+        default = true;
+      };
 
       period = lib.mkOption {
         default = "0 * * * *";
@@ -26,11 +28,13 @@ in
 
     monitors = {
       interfaces = {
-        enable = lib.mkEnableOption "network interface monitors" // { default = true; };
+        enable = lib.mkEnableOption "network interface monitors" // {
+          default = true;
+        };
 
         targets = lib.mkOption {
-          default = [];
-          example = ["eth0"];
+          default = [ ];
+          example = [ "eth0" ];
           type = lib.types.listOf lib.types.str;
           description = ''
             List of network interfaces that will be monitored.
@@ -41,9 +45,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    packages = [
-      "luci-app-statistics"
-    ];
+    packages = [ "luci-app-statistics" ];
 
     etc = {
       "crontabs/root".text = lib.mkIf cfg.backup.enable ''

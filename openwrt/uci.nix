@@ -1,80 +1,92 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 let
   cfg = config.uci;
 
-  formatConfig = nix:
-    lib.concatStringsSep
-      "\n"
-      (lib.flatten
-        (lib.mapAttrsToList
-          (config: sections: [
-            "package ${config}"
-            (lib.mapAttrsToList formatSections sections)
-          ])
-          nix));
+  formatConfig =
+    nix:
+    lib.concatStringsSep "\n" (
+      lib.flatten (
+        lib.mapAttrsToList (config: sections: [
+          "package ${config}"
+          (lib.mapAttrsToList formatSections sections)
+        ]) nix
+      )
+    );
 
-  formatSections = type: sections:
-    if lib.isAttrs sections
-    then
-      lib.mapAttrsToList
-        (name: vals: [
-          "config ${type} ${formatScalar name}"
-          (formatSection vals)
-        ])
-        sections
+  formatSections =
+    type: sections:
+    if lib.isAttrs sections then
+      lib.mapAttrsToList (name: vals: [
+        "config ${type} ${formatScalar name}"
+        (formatSection vals)
+      ]) sections
     else
-      map
-        (vals: [
-          "config ${type}"
-          (formatSection vals)
-        ])
-        sections;
+      map (vals: [
+        "config ${type}"
+        (formatSection vals)
+      ]) sections;
 
-  formatSection =
-    lib.mapAttrsToList
-      (option: value:
-        if lib.isList value
-        then map (value: "  list ${option} ${formatScalar value}") value
-        else "  option ${option} ${formatScalar value}");
+  formatSection = lib.mapAttrsToList (
+    option: value:
+    if lib.isList value then
+      map (value: "  list ${option} ${formatScalar value}") value
+    else
+      "  option ${option} ${formatScalar value}"
+  );
 
-  formatScalar = val:
-    if lib.isBool val then (if val then "'1'" else "'0'")
-    else if lib.isInt val then "'${toString val}'"
-    else if lib.isAttrs val then "'${secretName val._secret}'"
-    else "'${lib.replaceStrings [ "'" ] [ "'\\''" ] val}'";
+  formatScalar =
+    val:
+    if lib.isBool val then
+      (if val then "'1'" else "'0'")
+    else if lib.isInt val then
+      "'${toString val}'"
+    else if lib.isAttrs val then
+      "'${secretName val._secret}'"
+    else
+      "'${lib.replaceStrings [ "'" ] [ "'\\''" ] val}'";
 
   secretName = sec: "@secret_${sec}_${builtins.hashString "sha256" sec}@";
 
-  collectSecrets = nix:
+  collectSecrets =
+    nix:
     lib.pipe nix [
       lib.attrValues
       (lib.concatMap lib.attrValues)
       (lib.concatMap (s: if lib.isAttrs s then lib.attrValues s else s))
       (lib.concatMap lib.attrValues)
       (lib.concatMap lib.toList)
-      (lib.concatMap (v: if v ? _secret then [{ name = v._secret; value = { }; }] else [ ]))
+      (lib.concatMap (
+        v:
+        if v ? _secret then
+          [
+            {
+              name = v._secret;
+              value = { };
+            }
+          ]
+        else
+          [ ]
+      ))
       lib.listToAttrs
       lib.attrNames
     ];
 
-  uciIdentifierCheck = type: attrs:
+  uciIdentifierCheck =
+    type: attrs:
     let
-      invalid = lib.filter
-        (n: builtins.match
-          (
-            if type == "config" then
-              "[a-zA-Z0-9_-]+"
-            else
-              "[a-zA-Z0-9_]+"
-          )
-          n == null)
-        (lib.attrNames attrs);
+      invalid = lib.filter (
+        n: builtins.match (if type == "config" then "[a-zA-Z0-9_-]+" else "[a-zA-Z0-9_]+") n == null
+      ) (lib.attrNames attrs);
     in
-    lib.warnIf
-      (invalid != [ ])
-      ("Invalid UCI ${type} names found: ${toString invalid}")
-      (invalid == [ ]);
+    lib.warnIf (invalid != [ ]) ("Invalid UCI ${type} names found: ${toString invalid}") (
+      invalid == [ ]
+    );
 in
 
 {
@@ -101,7 +113,8 @@ in
     };
 
     settings = lib.mkOption {
-      type = with lib.types;
+      type =
+        with lib.types;
         let
           scalar = oneOf [
             str
@@ -126,12 +139,14 @@ in
           freeformType =
             # <config>.<name>=type       -> config.type.name ...
             # <config>.@<anonymous>=type -> config.type = [{ ... }]
-            attrsOf # config
-              (attrsOf # type
-                (either
-                  (uciAttrsOf "section" options) # name ...
+            # config
+            attrsOf (
+              # type
+              attrsOf (
+                either (uciAttrsOf "section" options) # name ...
                   (listOf options) # [{ ... }]
-                ))
+              )
+            )
             // {
               description = "UCI config";
             };
@@ -155,7 +170,7 @@ in
             netmask = "255.0.0.0";
           };
 
-          globals = [{ ula_prefix = "fdb8:155d:7ef5::/48"; }];
+          globals = [ { ula_prefix = "fdb8:155d:7ef5::/48"; } ];
         };
       };
     };
@@ -173,10 +188,11 @@ in
   };
 
   config = {
-    uci.secretsCommand = lib.mkIf (cfg.sopsSecrets != null)
-      (pkgs.writeShellScript "sops" ''
+    uci.secretsCommand = lib.mkIf (cfg.sopsSecrets != null) (
+      pkgs.writeShellScript "sops" ''
         ${pkgs.sops}/bin/sops --output-type json -d ${lib.escapeShellArg "${cfg.sopsSecrets}"}
-      '');
+      ''
+    );
 
     build.configFile = pkgs.writeText "config" (formatConfig cfg.settings);
 
@@ -202,19 +218,25 @@ in
               log_err "secrets command did not produce an object"
               exit 1
             }
-            ${lib.concatMapStrings
-              (secret: let arg = lib.escapeShellArg secret; in ''
-                has="$(${jq} -r --arg s ${arg} 'has($s)' <"$S")"
-                $has || {
-                  log_err secret ${arg} not defined
-                  exit 1
-                }
-                ${pkgs.replace-secret}/bin/replace-secret \
-                  ${lib.escapeShellArg (secretName secret)} \
-                  <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
-                  "$C"
-              '')
-              (collectSecrets cfg.settings)}
+            ${
+              lib.concatMapStrings (
+                secret:
+                let
+                  arg = lib.escapeShellArg secret;
+                in
+                ''
+                  has="$(${jq} -r --arg s ${arg} 'has($s)' <"$S")"
+                  $has || {
+                    log_err secret ${arg} not defined
+                    exit 1
+                  }
+                  ${pkgs.replace-secret}/bin/replace-secret \
+                    ${lib.escapeShellArg (secretName secret)} \
+                    <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
+                    "$C"
+                ''
+              ) (collectSecrets cfg.settings)
+            }
           )
         '';
         copy = ''
@@ -228,9 +250,11 @@ in
             cd /etc/config
             for cfg in *; do
               case "$cfg" in
-                ${lib.optionalString (configured != []) ''
-                  ${lib.concatMapStringsSep "|" lib.escapeShellArg configured}) : ;;
-                ''}
+                ${
+                  lib.optionalString (configured != [ ]) ''
+                    ${lib.concatMapStringsSep "|" lib.escapeShellArg configured}) : ;;
+                  ''
+                }
                 *) rm "$cfg" ;;
               esac
             done

@@ -28,7 +28,12 @@
       IdentityFile = ./example.key;
     };
 
-    packages = [ "losetup" "mount-utils" "coreutils-stat" "htop" ];
+    packages = [
+      "losetup"
+      "mount-utils"
+      "coreutils-stat"
+      "htop"
+    ];
     providers = {
       dnsmasq = "dnsmasq-full";
     };
@@ -47,24 +52,31 @@
     # necessary, so we don't want to include either here. we also keep luci to not
     # break the web interface, although configuration through the web ui is discouraged.
     # rpcd is needed for luci.
-    uci.retain = [ "ucitrack" "firewall" "luci" "rpcd" ];
+    uci.retain = [
+      "ucitrack"
+      "firewall"
+      "luci"
+      "rpcd"
+    ];
     uci.settings = {
-      dropbear.dropbear = [{
-        PasswordAuth = "on";
-        RootPasswordAuth = "on";
-        Port = 22;
-      }];
+      dropbear.dropbear = [
+        {
+          PasswordAuth = "on";
+          RootPasswordAuth = "on";
+          Port = 22;
+        }
+      ];
 
       network = {
-        device = [{
-          name = "br-lan";
-          ports = "eth0";
-          type = "bridge";
-        }];
+        device = [
+          {
+            name = "br-lan";
+            ports = "eth0";
+            type = "bridge";
+          }
+        ];
 
-        globals = [{
-          ula_prefix = "fd10:155d:7ef5::/48";
-        }];
+        globals = [ { ula_prefix = "fd10:155d:7ef5::/48"; } ];
 
         interface.lan = {
           device = "br-lan";
@@ -80,7 +92,10 @@
       };
 
       uhttpd.uhttpd.main = {
-        listen_http = [ "0.0.0.0:80" "[::]:80" ];
+        listen_http = [
+          "0.0.0.0:80"
+          "[::]:80"
+        ];
         lua_prefix = [ "/cgi-bin/luci=/usr/lib/lua/luci/sgi/uhttpd.lua" ];
         home = "/www";
         cgi_prefix = "/cgi-bin";
@@ -88,14 +103,16 @@
       };
 
       system = {
-        system = [{
-          hostname = "OpenWrt";
-          timezone = "UTC";
-          ttylogin = 0;
-          log_size = 64;
-          urandom_seed = 0;
-          notes._secret = "notes";
-        }];
+        system = [
+          {
+            hostname = "OpenWrt";
+            timezone = "UTC";
+            ttylogin = 0;
+            log_size = 64;
+            urandom_seed = 0;
+            notes._secret = "notes";
+          }
+        ];
 
         timeserver.ntp = {
           enabled = true;

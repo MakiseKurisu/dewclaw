@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 let
   deps = config.build.depsPackage;
@@ -30,30 +35,31 @@ in
       '';
     };
 
-    build.depsPackage = pkgs.runCommand "deps.ipk"
-      rec {
-        package_name = ".extra-system-deps.";
-        version = builtins.hashString "sha256" (toString config.packages);
-        control = ''
-          Package: ${package_name}
-          Version: ${version}
-          Architecture: all
-          Description: extra system dependencies
-          ${lib.optionalString
-            (config.packages != [])
-            "Depends: ${lib.concatStringsSep ", " config.packages}"
-          }
-        '';
-        passAsFile = [ "control" ];
-      } ''
-      mkdir -p deps/control deps/data
-      cp $controlPath deps/control/control
-      echo 2.0 > deps/debian-binary
+    build.depsPackage =
+      pkgs.runCommand "deps.ipk"
+        rec {
+          package_name = ".extra-system-deps.";
+          version = builtins.hashString "sha256" (toString config.packages);
+          control = ''
+            Package: ${package_name}
+            Version: ${version}
+            Architecture: all
+            Description: extra system dependencies
+            ${lib.optionalString (
+              config.packages != [ ]
+            ) "Depends: ${lib.concatStringsSep ", " config.packages}"}
+          '';
+          passAsFile = [ "control" ];
+        }
+        ''
+          mkdir -p deps/control deps/data
+          cp $controlPath deps/control/control
+          echo 2.0 > deps/debian-binary
 
-      alias tar='command tar --numeric-owner --group=0 --owner=0'
-      (cd deps/control && tar -czf ../control.tar.gz ./*)
-      (cd deps/data && tar -czf ../data.tar.gz .)
-      (cd deps && tar -zcf $out ./debian-binary ./data.tar.gz ./control.tar.gz)
-    '';
+          alias tar='command tar --numeric-owner --group=0 --owner=0'
+          (cd deps/control && tar -czf ../control.tar.gz ./*)
+          (cd deps/data && tar -czf ../data.tar.gz .)
+          (cd deps && tar -zcf $out ./debian-binary ./data.tar.gz ./control.tar.gz)
+        '';
   };
 }

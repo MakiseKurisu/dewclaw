@@ -8,21 +8,31 @@
   };
 
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , flake-parts
-    , dewclaw
-    , ...
-    }: flake-parts.lib.mkFlake { inherit inputs; } {
+    inputs@{
+      self,
+      nixpkgs,
+      flake-parts,
+      dewclaw,
+      ...
+    }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
-      perSystem = { config, self', inputs', pkgs, system, ... }: {
-        formatter = pkgs.nixfmt-rfc-style;
-        packages = {
-          dewclaw-env = pkgs.callPackage dewclaw {
-            configuration = import ../classic/example.nix;
+      perSystem =
+        {
+          config,
+          self',
+          inputs',
+          pkgs,
+          system,
+          ...
+        }:
+        {
+          formatter = pkgs.nixfmt-rfc-style;
+          packages = {
+            dewclaw-env = pkgs.callPackage dewclaw {
+              configuration = import ../classic/example.nix;
+            };
           };
-          default = self.packages.x86_64-linux.dewclaw-env;
         };
-      };
     };
 }

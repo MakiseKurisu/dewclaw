@@ -18,9 +18,5 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    packages = [
-      cfg.package
-    ];
-  };
+  config = lib.mkIf cfg.enable { packages = [ cfg.package ]; };
 }
