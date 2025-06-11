@@ -1,11 +1,13 @@
-{ pkgs ? import <nixpkgs> { config = { }; overlays = [ ]; }
+{
+  pkgs ? import <nixpkgs> {
+    config = { };
+    overlays = [ ];
+  },
 }:
 
 let
   evaluated = pkgs.lib.evalModules {
-    modules = [
-      ../openwrt
-    ];
+    modules = [ ../openwrt ];
     specialArgs = {
       inherit pkgs;
     };
@@ -13,36 +15,38 @@ let
 
   optionsDoc = pkgs.nixosOptionsDoc {
     inherit (evaluated) options;
-    transformOptions = opt:
+    transformOptions =
+      opt:
       let
         cwd = toString ../.;
-        shorten = decl:
+        shorten =
+          decl:
           let
             removed = pkgs.lib.removePrefix cwd decl;
           in
-          if removed != decl
-          then {
-            url =
-              "https://github.com/MakiseKurisu/dewclaw/blob/main${removed}"
-              + (if pkgs.lib.hasSuffix ".nix" removed
-              then ""
-              else "/default.nix");
-            name = "<dewclaw${removed}>";
-          }
-          else removed;
+          if removed != decl then
+            {
+              url =
+                "https://github.com/MakiseKurisu/dewclaw/blob/main${removed}"
+                + (if pkgs.lib.hasSuffix ".nix" removed then "" else "/default.nix");
+              name = "<dewclaw${removed}>";
+            }
+          else
+            removed;
       in
       opt // { declarations = map shorten opt.declarations; };
   };
 in
 
 pkgs.runCommand "dewclaw-book"
-{
-  src = ./src;
-  buildInputs = [ pkgs.mdbook ];
-} ''
-  cp -r --no-preserve=all $src ./src
-  ln -s ${optionsDoc.optionsCommonMark} ./src/options.md
-  ln -s ${../README.md} ./src/README.md
-  mdbook build
-  mv book $out
-''
+  {
+    src = ./src;
+    buildInputs = [ pkgs.mdbook ];
+  }
+  ''
+    cp -r --no-preserve=all $src ./src
+    ln -s ${optionsDoc.optionsCommonMark} ./src/options.md
+    ln -s ${../README.md} ./src/README.md
+    mdbook build
+    mv book $out
+  ''
