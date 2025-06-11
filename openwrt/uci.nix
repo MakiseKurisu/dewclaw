@@ -90,28 +90,12 @@ let
 in
 
 {
+  imports = [
+    (lib.mkRenamedOptionModule [ "uci" "sopsSecrets" ] [ "sopsSecrets" ])
+    (lib.mkRenamedOptionModule [ "uci" "secretsCommand" ] [ "secretsCommand" ])
+  ];
+
   options.uci = {
-    secretsCommand = lib.mkOption {
-      type = lib.types.path;
-      default = pkgs.writeScript "no-secrets" "echo '{}'";
-      description = ''
-        Command to retrieve secrets. Must be an executable command that
-        returns a JSON object on `stdout`, with secret names as keys and string
-        values.
-      '';
-    };
-
-    sopsSecrets = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
-      default = null;
-      description = ''
-        sops secrets file. This as a shorthand for setting {option}`secretsCommand`
-        to a script that calls `sops -d <path>`. Path semantics apply: if the given
-        path is a path literal it is copied into the store and the resulting absolute
-        path is used, otherwise the given path is used verbatim in the generated script.
-      '';
-    };
-
     settings = lib.mkOption {
       type =
         with lib.types;
@@ -188,17 +172,6 @@ in
   };
 
   config = {
-    uci.secretsCommand = lib.mkIf (cfg.sopsSecrets != null) (
-      (lib.getExe (
-        pkgs.writeShellApplication {
-          name = "sops";
-          text = ''
-            ${pkgs.sops}/bin/sops --output-type json -d ${lib.escapeShellArg "${cfg.sopsSecrets}"}
-          '';
-        }
-      ))
-    );
-
     build.configFile = pkgs.writeText "config" (formatConfig cfg.settings);
 
     deploySteps.uciConfig =
@@ -207,7 +180,7 @@ in
       assert uciIdentifierCheck "config" cfg.settings;
       let
         cfgName = baseNameOf config.build.configFile;
-        jq = "${pkgs.jq}/bin/jq";
+        jq = lib.getExe pkgs.jq;
         configured = lib.attrNames config.uci.settings ++ config.uci.retain;
       in
       {
@@ -216,12 +189,6 @@ in
           cp --no-preserve=all ${config.build.configFile} "$TMP"
           (
             umask 0077
-            S="$TMP"/secrets
-            ${cfg.secretsCommand} > "$S"
-            [ "$(${jq} -r type <"$S")" == "object" ] || {
-              log_err "secrets command did not produce an object"
-              exit 1
-            }
             ${lib.concatMapStrings (
               secret:
               let

@@ -7,7 +7,9 @@
 }:
 
 let
-  evaluated = pkgs.lib.evalModules {
+  inherit (pkgs) lib;
+
+  evaluated = lib.evalModules {
     modules = [
       ./openwrt
       configuration
@@ -16,12 +18,16 @@ let
       inherit pkgs;
     };
   };
+
+  targets = lib.mapAttrs (_: dev: dev.build.deploy) evaluated.config.openwrt;
 in
 
-pkgs.buildEnv rec {
-  name = "dewclaw-env";
+lib.asserts.checkAssertWarn evaluated.config.assertions evaluated.config.warnings (
+  pkgs.buildEnv {
+    name = "dewclaw-env";
 
-  paths = builtins.attrValues passthru.targets;
+    paths = lib.attrValues targets;
 
-  passthru.targets = pkgs.lib.mapAttrs (_: dev: dev.build.deploy) evaluated.config.openwrt;
-}
+    passthru = { inherit targets; };
+  }
+)
