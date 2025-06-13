@@ -189,9 +189,14 @@ in
 
   config = {
     uci.secretsCommand = lib.mkIf (cfg.sopsSecrets != null) (
-      pkgs.writeShellScript "sops" ''
-        ${pkgs.sops}/bin/sops --output-type json -d ${lib.escapeShellArg "${cfg.sopsSecrets}"}
-      ''
+      (lib.getExe (
+        pkgs.writeShellApplication {
+          name = "sops";
+          text = ''
+            ${pkgs.sops}/bin/sops --output-type json -d ${lib.escapeShellArg "${cfg.sopsSecrets}"}
+          '';
+        }
+      ))
     );
 
     build.configFile = pkgs.writeText "config" (formatConfig cfg.settings);

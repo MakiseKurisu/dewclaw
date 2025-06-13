@@ -198,147 +198,150 @@ let
                       )
                   );
               in
-              pkgs.writeShellScriptBin "deploy-${name}" ''
-                set -euo pipefail
-                shopt -s inherit_errexit
+              pkgs.writeShellApplication {
+                name = "deploy-${name}";
+                text = ''
+                  shopt -s inherit_errexit
 
-                BOLD='\e[1m'
-                PURP='\e[35m'
-                CYAN='\e[36m'
-                RED='\e[31m'
-                NORMAL='\e[0m'
+                  BOLD='\e[1m'
+                  PURP='\e[35m'
+                  #CYAN='\e[36m'
+                  RED='\e[31m'
+                  NORMAL='\e[0m'
 
-                log() {
-                  printf "$BOLD$PURP> %s$NORMAL\n" "$*"
-                }
-                log_err() {
-                  printf "$BOLD$RED> %s$NORMAL\n" "$*"
-                }
+                  log() {
+                    printf "$BOLD$PURP> %s$NORMAL\n" "$*"
+                  }
+                  log_err() {
+                    printf "$BOLD$RED> %s$NORMAL\n" "$*"
+                  }
 
-                # generate a (reasonably) unique logger tag. mustn't be too long,
-                # or it'll be truncated and matching will fail.
-                TAG="apply_config_$$_$RANDOM"
+                  # generate a (reasonably) unique logger tag. mustn't be too long,
+                  # or it'll be truncated and matching will fail.
+                  TAG="apply_config_$$_$RANDOM"
 
-                ssh() {
-                  command ssh -n ${sshOpts} -oHostname=$TARGET_HOST device "$@"
-                }
+                  ssh() {
+                    command ssh -n ${sshOpts} -oHostname="$TARGET_HOST" device "$@"
+                  }
 
-                scp() {
-                  command scp -Op ${sshOpts} -oHostname=$TARGET_HOST "$@"
-                }
+                  scp() {
+                    command scp -Op ${sshOpts} -oHostname="$TARGET_HOST" "$@"
+                  }
 
-                usage() {
-                  cat << EOF
-                usage: $(basename "$0") [options]
-                options:
-                  -h|--help               Show this help
-                  -r|--reload             Reload/deploy config without rebooting
-                  -y|--no-confirmation    Skip successful deployment confirmation
-                  -t|--target <host>      Override the deployment host
-                  --no-host-key-checking  Disable SSH host checking at confirmation
-                EOF
-                }
+                  usage() {
+                    cat << EOF
+                  usage: $(basename "$0") [options]
+                  options:
+                    -h|--help               Show this help
+                    -r|--reload             Reload/deploy config without rebooting
+                    -y|--no-confirmation    Skip successful deployment confirmation
+                    -t|--target <host>      Override the deployment host
+                    --no-host-key-checking  Disable SSH host checking at confirmation
+                  EOF
+                  }
 
-                main() {
-                  RELOAD_ONLY=false
-                  DEPLOY_CONFIRMATION=true
-                  TARGET_HOST=${config.deploy.host}
-                  EXTRA_SSH_OPTION=""
+                  main() {
+                    RELOAD_ONLY=false
+                    DEPLOY_CONFIRMATION=true
+                    TARGET_HOST=${config.deploy.host}
+                    EXTRA_SSH_OPTION=""
 
-                  TIMEOUT=${toString rebootTimeout}
+                    TIMEOUT=${toString rebootTimeout}
 
-                  local TEMP
-                  if ! TEMP="$(getopt -o "hryt:" -l "help,reload,yolo,no-confirmation,target:,no-host-key-checking" -n "$0" -- "$@")"; then
-                    return
-                  fi
-                  eval set -- "$TEMP"
+                    local TEMP
+                    if ! TEMP="$(getopt -o "hryt:" -l "help,reload,yolo,no-confirmation,target:,no-host-key-checking" -n "$0" -- "$@")"; then
+                      return
+                    fi
+                    eval set -- "$TEMP"
 
-                  while true; do
-                    TEMP="$1"
-                    shift
-                    case "$TEMP" in
-                      -h|--help)
-                        usage
-                        exit 0
-                        ;;
-                      -r|--reload)
-                        RELOAD_ONLY=true
-                        TIMEOUT=${toString reloadTimeout}
-                        ;;
-                      -y|--yolo|--no-confirmation)
-                        DEPLOY_CONFIRMATION=false
-                        ;;
-                      -t|--target)
-                        TARGET_HOST=$1
-                        shift
-                        ;;
-                      --no-host-key-checking)
-                        EXTRA_SSH_OPTION="-oStrictHostKeyChecking=no"
-                        ;;
-                      --)
-                        break
-                        ;;
-                    esac
-                  done
-
-                  export TMP="$(umask 0077; mktemp -d)"
-
-                  trap '
-                    [ -e "$TMP/cm" ] && ssh -O exit 2>/dev/null || true
-                    rm -rf "$TMP"
-                  ' EXIT
-
-                  log 'preparing files'
-                  ${prepare}
-
-                  log 'copying files'
-                  scp ${config_generation} device:/etc/init.d/config_generation
-                  ${copy}
-
-                  # apply the new config and wait for the box to go down via ssh connection
-                  # timeout.
-                  log 'applying config'
-                  ssh -Nf
-                  if ! $DEPLOY_CONFIRMATION; then
-                    log 'disabling deployment confirmation'
-                    ssh '/etc/init.d/config_generation yolo'
-                  fi
-                  if $RELOAD_ONLY; then
-                    ssh 'logread -l9999 -f' &
-                    ssh '/etc/init.d/config_generation prepare_reload'
-                    ssh '/etc/init.d/config_generation start' &
-                    ssh '/etc/init.d/config_generation apply_reload 2>&1 | logger -t '"$TAG"
-                    ssh -O exit
-                  else
-                    ssh 'logread -l9999 -f' &
-                    ssh '/etc/init.d/config_generation apply_reboot 2>&1 | logger -t '"$TAG"
-                    # if the previous command succeeded we're up for a reboot, at which
-                    # point ssh will exit with a 255 status
-                    wait %1 || true
-                  fi \
-                    | awk -v FS="$TAG: " '
-                        $2 { print $2 }
-                      '
-
-                  if $DEPLOY_CONFIRMATION; then
-                    log 'waiting for device to return'
-
-                    local final=$(( $(date +%s) + TIMEOUT ))
-                    while ! TARGET_HOST=${config.deploy.host} ssh $EXTRA_SSH_OPTION -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
-                      if (( $(date +%s) > final )); then
-                        log_err 'configuration change failed, device will roll back and reboot'
-                        exit 1
-                      else
-                        sleep 1
-                      fi
+                    while true; do
+                      TEMP="$1"
+                      shift
+                      case "$TEMP" in
+                        -h|--help)
+                          usage
+                          exit 0
+                          ;;
+                        -r|--reload)
+                          RELOAD_ONLY=true
+                          TIMEOUT=${toString reloadTimeout}
+                          ;;
+                        -y|--yolo|--no-confirmation)
+                          DEPLOY_CONFIRMATION=false
+                          ;;
+                        -t|--target)
+                          TARGET_HOST=$1
+                          shift
+                          ;;
+                        --no-host-key-checking)
+                          EXTRA_SSH_OPTION="-oStrictHostKeyChecking=no"
+                          ;;
+                        --)
+                          break
+                          ;;
+                      esac
                     done
-                  fi
 
-                  log 'new configuration applied'
-                }
+                    TMP="$(umask 0077; mktemp -d)"
+                    export TMP
 
-                main "$@"
-              '';
+                    trap '
+                      [ -e "$TMP/cm" ] && ssh -O exit 2>/dev/null || true
+                      rm -rf "$TMP"
+                    ' EXIT
+
+                    log 'preparing files'
+                    ${prepare}
+
+                    log 'copying files'
+                    scp ${config_generation} device:/etc/init.d/config_generation
+                    ${copy}
+
+                    # apply the new config and wait for the box to go down via ssh connection
+                    # timeout.
+                    log 'applying config'
+                    ssh -Nf
+                    if ! $DEPLOY_CONFIRMATION; then
+                      log 'disabling deployment confirmation'
+                      ssh '/etc/init.d/config_generation yolo'
+                    fi
+                    if $RELOAD_ONLY; then
+                      ssh 'logread -l9999 -f' &
+                      ssh '/etc/init.d/config_generation prepare_reload'
+                      ssh '/etc/init.d/config_generation start' &
+                      ssh '/etc/init.d/config_generation apply_reload 2>&1 | logger -t '"$TAG"
+                      ssh -O exit
+                    else
+                      ssh 'logread -l9999 -f' &
+                      ssh '/etc/init.d/config_generation apply_reboot 2>&1 | logger -t '"$TAG"
+                      # if the previous command succeeded we're up for a reboot, at which
+                      # point ssh will exit with a 255 status
+                      wait %1 || true
+                    fi \
+                      | awk -v FS="$TAG: " '
+                          $2 { print $2 }
+                        '
+
+                    if $DEPLOY_CONFIRMATION; then
+                      log 'waiting for device to return'
+
+                      local final=$(( $(date +%s) + TIMEOUT ))
+                      while ! TARGET_HOST=${config.deploy.host} ssh $EXTRA_SSH_OPTION -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
+                        if (( $(date +%s) > final )); then
+                          log_err 'configuration change failed, device will roll back and reboot'
+                          exit 1
+                        else
+                          sleep 1
+                        fi
+                      done
+                    fi
+
+                    log 'new configuration applied'
+                  }
+
+                  main "$@"
+                '';
+              };
           };
         }
       )
