@@ -218,25 +218,23 @@ in
               log_err "secrets command did not produce an object"
               exit 1
             }
-            ${
-              lib.concatMapStrings (
-                secret:
-                let
-                  arg = lib.escapeShellArg secret;
-                in
-                ''
-                  has="$(${jq} -r --arg s ${arg} 'has($s)' <"$S")"
-                  $has || {
-                    log_err secret ${arg} not defined
-                    exit 1
-                  }
-                  ${pkgs.replace-secret}/bin/replace-secret \
-                    ${lib.escapeShellArg (secretName secret)} \
-                    <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
-                    "$C"
-                ''
-              ) (collectSecrets cfg.settings)
-            }
+            ${lib.concatMapStrings (
+              secret:
+              let
+                arg = lib.escapeShellArg secret;
+              in
+              ''
+                has="$(${jq} -r --arg s ${arg} 'has($s)' <"$S")"
+                $has || {
+                  log_err secret ${arg} not defined
+                  exit 1
+                }
+                ${pkgs.replace-secret}/bin/replace-secret \
+                  ${lib.escapeShellArg (secretName secret)} \
+                  <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
+                  "$C"
+              ''
+            ) (collectSecrets cfg.settings)}
           )
         '';
         copy = ''
@@ -250,11 +248,9 @@ in
             cd /etc/config
             for cfg in *; do
               case "$cfg" in
-                ${
-                  lib.optionalString (configured != [ ]) ''
-                    ${lib.concatMapStringsSep "|" lib.escapeShellArg configured}) : ;;
-                  ''
-                }
+                ${lib.optionalString (configured != [ ]) ''
+                  ${lib.concatMapStringsSep "|" lib.escapeShellArg configured}) : ;;
+                ''}
                 *) rm "$cfg" ;;
               esac
             done
