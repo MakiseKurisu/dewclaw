@@ -1,13 +1,10 @@
 {
-  config,
   lib,
   pkgs,
   ...
 }:
 
 let
-  cfg = config.openwrt;
-
   devType = lib.types.submoduleWith {
     specialArgs.pkgs = pkgs;
     description = "OpenWrt configuration";
@@ -177,7 +174,6 @@ let
                     '';
                 rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
                 reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;
-                hostname = config.deploy.host;
                 sshOpts =
                   ''-o ControlPath="$TMP/cm" ''
                   + lib.escapeShellArgs (
