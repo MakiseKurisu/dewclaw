@@ -216,7 +216,6 @@ in
           cp --no-preserve=all ${config.build.configFile} "$TMP"
           (
             umask 0077
-            C="$TMP"/${cfgName}
             S="$TMP"/secrets
             ${cfg.secretsCommand} > "$S"
             [ "$(${jq} -r type <"$S")" == "object" ] || {
@@ -237,7 +236,7 @@ in
                 ${pkgs.replace-secret}/bin/replace-secret \
                   ${lib.escapeShellArg (secretName secret)} \
                   <(${jq} -r --arg s ${arg} '.[$s]'" | tostring | sub(\"'\"; \"'\\\\'''\")" <"$S") \
-                  "$C"
+                  "$TMP"/${cfgName}
               ''
             ) (collectSecrets cfg.settings)}
           )
