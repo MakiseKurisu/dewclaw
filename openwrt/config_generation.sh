@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 
-EXTRA_COMMANDS="apply_reboot prepare_reload apply_reload commit"
+EXTRA_COMMANDS="apply_reboot prepare_reload apply_reload commit yolo"
 START=99
 
 _unregister_script() {
