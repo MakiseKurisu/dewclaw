@@ -69,7 +69,7 @@ _prepare_apply() {
 
 _run_steps() {
   (
-    set -e
+    set -euo pipefail
     @deploy_steps@
   )
 }
