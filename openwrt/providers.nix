@@ -24,7 +24,7 @@ in
 
   config = lib.mkIf (cfg != { }) {
     deploySteps.providers = {
-      priority = 70;
+      priority = 80;
       apply = lib.concatStrings (
         (lib.mapAttrsToList (name: value: ''
           (
