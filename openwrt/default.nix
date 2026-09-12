@@ -201,6 +201,7 @@ let
                 rebootTimeout = config.deploy.rollbackTimeout + config.deploy.rebootAllowance;
                 reloadTimeout = config.deploy.rollbackTimeout + config.deploy.reloadServiceWait;
                 sshOpts =
+                  extraConfig:
                   ''-o ControlPath="$TMP/cm" ''
                   + lib.escapeShellArgs (
                     lib.mapAttrsToList
@@ -221,6 +222,7 @@ let
                           User = config.deploy.user;
                         }
                         // config.deploy.sshConfig
+                        // extraConfig
                       )
                   );
               in
@@ -247,11 +249,21 @@ let
                   TAG="apply_config_$$_$RANDOM"
 
                   ssh() {
-                    command ssh -n ${sshOpts} -oHostname="$TARGET_HOST" device "$@"
+                    command ssh -n ${sshOpts { }} -oHostname="$TARGET_HOST" device "$@"
                   }
 
                   scp() {
-                    command scp -Op ${sshOpts} -oHostname="$TARGET_HOST" "$@"
+                    command scp -Op ${sshOpts { }} -oHostname="$TARGET_HOST" "$@"
+                  }
+
+                  ssh_host_check() {
+                    TARGET_HOST=$1
+                    shift
+                    if $NO_HOST_KEY_CHECKING; then
+                      command ssh -n ${sshOpts { StrictHostKeyChecking = "no"; ConnectTimeout = 5; }} -oHostname="$TARGET_HOST" device "$@"
+                    else
+                      command ssh -n ${sshOpts { ConnectTimeout = 5; }} -oHostname="$TARGET_HOST" device "$@"
+                    fi
                   }
 
                   usage() {
@@ -270,7 +282,7 @@ let
                     RELOAD_ONLY=false
                     DEPLOY_CONFIRMATION=true
                     TARGET_HOST=${config.deploy.host}
-                    EXTRA_SSH_OPTION=""
+                    NO_HOST_KEY_CHECKING=false
 
                     TIMEOUT=${toString rebootTimeout}
 
@@ -300,7 +312,7 @@ let
                           shift
                           ;;
                         --no-host-key-checking)
-                          EXTRA_SSH_OPTION="-oStrictHostKeyChecking=no"
+                          NO_HOST_KEY_CHECKING=true
                           ;;
                         --)
                           break
@@ -352,7 +364,7 @@ let
                       log 'waiting for device to return'
 
                       local final=$(( $(date +%s) + TIMEOUT ))
-                      while ! TARGET_HOST=${config.deploy.host} ssh $EXTRA_SSH_OPTION -oConnectTimeout=5 '/etc/init.d/config_generation commit'; do
+                      while ! ssh_host_check "${config.deploy.host}" '/etc/init.d/config_generation commit'; do
                         if (( $(date +%s) > final )); then
                           log_err 'configuration change failed, device will roll back and reboot'
                           exit 1
