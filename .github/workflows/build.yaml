@@ -32,10 +32,10 @@ jobs:
           sudo chown root:root /nix
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v13
+        uses: DeterminateSystems/nix-installer-action@v23
 
       - name: Override nix-daemon build directory
         run: |
@@ -52,7 +52,7 @@ jobs:
           sudo systemctl restart nix-daemon
 
       - name: Setup automatic caching
-        uses: DeterminateSystems/magic-nix-cache-action@v7
+        uses: DeterminateSystems/magic-nix-cache-action@v15
 
       - name: Build known packages
         run: |
@@ -64,7 +64,7 @@ jobs:
           done
 
       - name: Upload archive to Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: 'out'
           path: 'out'

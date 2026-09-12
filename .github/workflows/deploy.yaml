@@ -34,7 +34,7 @@ jobs:
     steps:
 
       - name: Get built site
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: 'out'
           path: 'out'
@@ -47,7 +47,7 @@ jobs:
           tar cf ../pages.tar.gz .
 
       - name: Upload repacked archive to Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: 'github-pages'
           path: 'out/pages.tar.gz'
@@ -55,4 +55,4 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
