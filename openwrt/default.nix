@@ -161,13 +161,14 @@ let
           };
 
           imports = [
-            ./etc.nix
-            ./packages.nix
-            ./uci.nix
-            ./users.nix
-            ./providers.nix
-            ./services
             ./sops.nix
+            ./users.nix
+            ./etc.nix
+            ./distfeeds.nix
+            ./packages.nix
+            ./providers.nix
+            ./uci.nix
+            ./services
           ];
 
           config = {
