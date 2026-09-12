@@ -38,12 +38,8 @@ in
           sh /tmp/deps-${version}.apk
         elif command -v opkg >/dev/null; then
           if [ "${version}" != "$(opkg info ${depsIpk.package_name} | grep Version | cut -d' ' -f2)" ]; then
-            opkg update
             opkg install --autoremove --force-downgrade /tmp/deps-${version}.ipk
           fi
-        else
-          echo "error: missing package manager (tried 'apk' and 'opkg')"
-          return 1
         fi
         rm /tmp/deps-${version}.apk
         rm /tmp/deps-${version}.ipk
@@ -67,7 +63,6 @@ in
           ${lib.concatStringsSep "\n" config.packages}
           EOF
 
-          apk update
           apk fix --upgrade
         '';
       };

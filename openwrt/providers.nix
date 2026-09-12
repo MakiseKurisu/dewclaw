@@ -26,12 +26,7 @@ in
     deploySteps.providers = {
       priority = 70;
       apply = lib.concatStrings (
-        [
-          ''
-            opkg update
-          ''
-        ]
-        ++ (lib.mapAttrsToList (name: value: ''
+        lib.mapAttrsToList (name: value: ''
           (
             pkg="${name}"
             provider="${value}"
@@ -52,7 +47,7 @@ in
               fi
             fi
           )
-        '') cfg)
+        '') cfg
       );
     };
   };
