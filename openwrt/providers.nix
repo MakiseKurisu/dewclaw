@@ -26,11 +26,13 @@ in
     deploySteps.providers = {
       priority = 70;
       apply = lib.concatStrings (
-        lib.mapAttrsToList (name: value: ''
+        (lib.mapAttrsToList (name: value: ''
           (
             pkg="${name}"
             provider="${value}"
-            if ! opkg status "$provider" 2>/dev/null | grep -e Status: | grep -q installed; then
+            if command -v apk >/dev/null; then
+              sed -i "s/^$pkg$/$provider/" /etc/apk/world
+            elif ! opkg status "$provider" 2>/dev/null | grep -e Status: | grep -q installed; then
               temp="$(mktemp -d)"
               cd "$temp"
               opkg download "$pkg" "$provider"
@@ -39,15 +41,20 @@ in
               opkg remove "$pkg"
               opkg install "$provider" --cache . || opkg install "$pkg" --cache .
               rm -rf "$temp"
-              if [ "$provider" = "dnsmasq-full" ]; then
-                # workaround dnsmasq-full bug when running in lxc
-                # https://forum.openwrt.org/t/multiple-dhcp-dns-server-instances-not-work/130849/11
-                sed -i "s|procd_add_jail_mount /etc/passwd|procd_add_jail_mount /dev/urandom /etc/passwd|" /etc/init.d/dnsmasq
-                /etc/init.d/dnsmasq start
-              fi
+            fi
+            if [ "$provider" = "dnsmasq-full" ]; then
+              # workaround dnsmasq-full bug when running in lxc
+              # https://forum.openwrt.org/t/multiple-dhcp-dns-server-instances-not-work/130849/11
+              sed -i "s|procd_add_jail_mount /etc/passwd|procd_add_jail_mount /dev/urandom /etc/passwd|" /etc/init.d/dnsmasq
+              /etc/init.d/dnsmasq start
             fi
           )
-        '') cfg
+        '') cfg) ++
+        [''
+          if command -v apk >/dev/null; then
+            apk fix --update
+          fi
+        '']
       );
     };
   };
