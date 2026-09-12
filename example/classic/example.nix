@@ -38,7 +38,7 @@
       dnsmasq = "dnsmasq-full";
     };
 
-    # The root_pw entry in the sescrets file contains the actual root password hash
+    # The root_pw entry in the secrets file contains the actual root password hash
     users.root.hashedPasswordSecret = "root_pw";
 
     etc."dropbear/authorized_keys".text = ''

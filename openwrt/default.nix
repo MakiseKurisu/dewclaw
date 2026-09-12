@@ -54,7 +54,7 @@ let
                 default = "root";
                 visible = false;
                 description = ''
-                  User name for SSH connections. Doesn't currently to anything useful considering
+                  User name for SSH connections. Doesn't currently do anything useful considering
                   that we don't have any kind of `useSudo` option.
                 '';
               };
@@ -98,7 +98,7 @@ let
 
                   ::: {.note}
                   During reload-only deployment this timeout *includes* the time needed to apply
-                  configuration, which may be substatial if network activity is necessary (eg when
+                  configuration, which may be substantial if network activity is necessary (eg when
                   installing packages).
                   :::
                 '';

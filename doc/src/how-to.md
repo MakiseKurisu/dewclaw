@@ -3,7 +3,7 @@
 dewclaw can declaratively manage some (but by far not all) aspects of OpenWrt devices.
 Packages can be installed (and subsequently removed) declaratively by listing them in the `packages` option.
 UCI configs can be set declaratively using the `uci.settings` hierarchy, or be marked for imperative configuration by adding the appropriate package names to `uci.retain`.
-Files in `/etc` can be create with the `etc` hierarchy.
+Files in `/etc` can be created with the `etc` hierarchy.
 
 ## Mapping UCI options
 

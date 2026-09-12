@@ -1,5 +1,5 @@
 {
-  description = "dewclaw: semi-declarative OpenWrt configuration ";
+  description = "dewclaw: semi-declarative OpenWrt configuration";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

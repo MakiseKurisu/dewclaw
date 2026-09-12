@@ -1,4 +1,4 @@
-# dewclaw: semi-declarative OpenWrt configuration 
+# dewclaw: semi-declarative OpenWrt configuration
 
 [OpenWrt](https://openwrt.org/) is an embedded Linux distribution optimized for small routers and access points with minimal amounts of storage to work with.
 
@@ -6,6 +6,6 @@
 
 `dewclaw` is what happens if you try to mush the two together even though you know very well that you shouldn't.
 
-Originally created by @pennae, you can find the annocement thread [here](https://discourse.nixos.org/t/dewclaw-semi-declarative-openwrt-configurations/33993).
+Originally created by @pennae, you can find the announcement thread [here](https://discourse.nixos.org/t/dewclaw-semi-declarative-openwrt-configurations/33993).
 
-This is a fork based on [the origial code](https://git.eno.space/dewclaw.git/).
+This is a fork based on [the original code](https://git.eno.space/dewclaw.git/).

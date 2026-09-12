@@ -20,7 +20,7 @@
       type = lib.types.nullOr lib.types.path;
       default = null;
       description = ''
-        sops secrets file. This as a shorthand for setting {option}`secretsCommand`
+        sops secrets file. This is a shorthand for setting {option}`secretsCommand`
         to a script that calls `sops -d <path>`. Path semantics apply: if the given
         path is a path literal it is copied into the store and the resulting absolute
         path is used, otherwise the given path is used verbatim in the generated script.

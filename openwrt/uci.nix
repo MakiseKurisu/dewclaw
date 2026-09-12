@@ -139,7 +139,7 @@ in
       description = ''
         UCI settings in hierarchical representation. The toplevel key of this
         set denotes a UCI package, the second level the type of section, and the
-        third level may be either a list of anonymous setions or a set of named
+        third level may be either a list of anonymous sections or a set of named
         sections.
 
         Packages defined here will replace existing settings on the system entirely,

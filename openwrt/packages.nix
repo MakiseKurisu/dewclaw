@@ -17,11 +17,11 @@ in
     default = [ ];
     description = ''
       Extra packages to install. These are merely names of packages available
-      for package manager through the package source lists configured on the
+      to the package manager through the package source lists configured on the
       device, it is not currently possible to provide packages for installation
       without configuring a package source first.
 
-      For backward compatibility with OpenWRT <= 24.10, opkg will be used if apk
+      For backward compatibility with OpenWrt <= 24.10, opkg will be used if apk
       is unavailable.
     '';
   };
