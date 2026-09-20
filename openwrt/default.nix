@@ -331,6 +331,9 @@ let
                     log 'preparing files'
                     ${prepare}
 
+                    log 'establishing ssh connection'
+                    ssh -Nf
+
                     log 'copying files'
                     scp ${config_generation} device:/etc/init.d/config_generation
                     ${copy}
@@ -338,7 +341,6 @@ let
                     # apply the new config and wait for the box to go down via ssh connection
                     # timeout.
                     log 'applying config'
-                    ssh -Nf
                     if ! $DEPLOY_CONFIRMATION; then
                       log 'disabling deployment confirmation'
                       ssh '/etc/init.d/config_generation yolo'
